@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "react-leaflet-draw": "^0.20.6"
+  }
+}

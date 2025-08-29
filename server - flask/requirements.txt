@@ -1,0 +1,11 @@
+Flask
+Flask-Cors
+requests
+numpy
+opencv-python-headless
+pyzbar
+pyaadhaar
+werkzeug
+xmltodict
+thefuzz
+python-Levenshtein
