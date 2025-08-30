@@ -53,6 +53,7 @@ import chatbotRoutes from "./routes/chat.routes.js";
 import chatRouter from "./routes/chat.routes.js";
 import regionRouter from "./routes/region.routes.js";
 import farmerRouter from "./routes/farmer.routes.js";
+import projectRoutes from "./routes/project.routes.js";
 import farmActivityRoutes from "./routes/farmActivity.routes.js";
 
 app.use("/api/v1/users", userRouter);
@@ -62,6 +63,7 @@ app.use("/api/v1/chatbot", chatbotRoutes);
 app.use("/api/v1/chat", chatRouter);
 app.use("/api/v1/regions", regionRouter);
 app.use("/api/v1/farmers", farmerRouter);
+app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/farm-activity", farmActivityRoutes);
 
 io.on("connection", (socket) => {

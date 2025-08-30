@@ -19,6 +19,11 @@ import AadhaarVerificationPage from "@/pages/AadhaarVerificationPage";
 import Dashboard from "@/pages/Dashboard";
 import Chat from "@/pages/Chat";
 import GeoRegionSelectorPage from "@/pages/GeoRegionSelectorPage";
+import CreateProjectPage from "@/pages/CreateProjectPage";
+import ProjectManagersDashboard from "@/pages/ProjectManagersDashboard";
+import ProjectDetailsPage from "@/pages/ProjectDetailsPage";
+import EstimateEarningsPage from "@/pages/EstimateEarningsPage";
+import StartEarningPage from "@/pages/StartEarningPage";
 
 const hiddenLayoutRoutes = ["/login", "/signup", "/dashboard"];
 
@@ -58,6 +63,11 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/map" element={<GeoRegionSelectorPage />} />
+          <Route path="/dashboard-project" element={<ProjectManagersDashboard />} />
+          <Route path="/dashboard-project/:id" element={<ProjectDetailsPage />} />
+          <Route path="/dashboard-project/create-project" element={<CreateProjectPage />} />
+          <Route path="/estimate-earnings" element={<EstimateEarningsPage />} />
+          <Route path="/start-earning" element={<StartEarningPage />} />
         </Routes>
       </Layout>
     </Router>
