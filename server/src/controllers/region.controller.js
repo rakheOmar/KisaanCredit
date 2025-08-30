@@ -6,8 +6,6 @@ import fs from "fs";
 import CropModel from "../models/crop.model.js";
 import { getLandCoverFromBhuvan } from "../services/bhuvanService.js";
 
-// CRITICAL CHANGE: Pointing to the original single-band (grayscale) data file.
-// The colorized TIFF is for visualization only and does not contain the raw data.
 const tifPath = path.join(process.cwd(), "data", "dec.tif");
 
 const getNDVIValue = async (lon, lat) => {
@@ -26,7 +24,7 @@ const getNDVIValue = async (lon, lat) => {
 
   const fileDirectory = image.getFileDirectory();
   const noDataValue = fileDirectory.GDAL_NODATA ? parseFloat(fileDirectory.GDAL_NODATA) : null;
-  const sampleFormat = fileDirectory.SampleFormat ? fileDirectory.SampleFormat[0] : 1; // 1 for unsigned integer
+  const sampleFormat = fileDirectory.SampleFormat ? fileDirectory.SampleFormat[0] : 1;
 
   const width = image.getWidth();
   const height = image.getHeight();
@@ -49,13 +47,9 @@ const getNDVIValue = async (lon, lat) => {
     throw new ApiError("Coordinates point to an area with no data", 400);
   }
 
-  // Your original legend stated "DN/200". This logic assumes the raw pixel
-  // value is a Digital Number (DN) that needs to be scaled.
   let ndvi = pixelValue / 200.0;
 
-  // A check in case the source data is already scaled as a float.
   if (sampleFormat === 3) {
-    // 3 for IEEE Float
     ndvi = pixelValue;
   }
 
@@ -75,20 +69,66 @@ export const createRegion = async (req, res, next) => {
     const landCoverType = await getLandCoverFromBhuvan(lat, lon);
     const ndviValue = await getNDVIValue(lon, lat);
 
+    console.log(`Looking for model with land cover: "${landCoverType}"`);
+
     let model = await CropModel.findOne({
       cropName: landCoverType,
       region: "Maharashtra",
     });
+
+    console.log(`Maharashtra model found: ${!!model}`);
 
     if (!model) {
       model = await CropModel.findOne({
         cropName: landCoverType,
         region: "Generic",
       });
+      console.log(`Generic model found: ${!!model}`);
     }
 
     if (!model) {
-      throw new ApiError("No suitable carbon model found for the detected land cover", 404);
+      model = await CropModel.findOne({
+        cropName: { $regex: new RegExp(`^${landCoverType}$`, "i") },
+        region: "Maharashtra",
+      });
+      console.log(`Case-insensitive Maharashtra model found: ${!!model}`);
+    }
+
+    if (!model) {
+      model = await CropModel.findOne({
+        cropName: { $regex: new RegExp(`^${landCoverType}$`, "i") },
+        region: "Generic",
+      });
+      console.log(`Case-insensitive Generic model found: ${!!model}`);
+    }
+
+    if (!model) {
+      model = await CropModel.findOne({
+        cropName: { $regex: new RegExp(landCoverType, "i") },
+        region: "Maharashtra",
+      });
+      console.log(`Partial Maharashtra model found: ${!!model}`);
+    }
+
+    if (!model) {
+      model = await CropModel.findOne({
+        cropName: { $regex: new RegExp(landCoverType, "i") },
+        region: "Generic",
+      });
+      console.log(`Partial Generic model found: ${!!model}`);
+    }
+
+    if (!model) {
+      console.log("No model found. Available crop names:");
+      const availableCrops = await CropModel.find({}, "cropName region").limit(20);
+      availableCrops.forEach((crop) => {
+        console.log(`"${crop.cropName}" (${crop.region})`);
+      });
+
+      throw new ApiError(
+        `No suitable carbon model found for land cover: "${landCoverType}". Available models logged to console.`,
+        404
+      );
     }
 
     const { a, b } = model.model;
@@ -104,6 +144,7 @@ export const createRegion = async (req, res, next) => {
         a,
         b,
         usedModel: model.cropName,
+        modelRegion: model.region,
       })
     );
   } catch (err) {
