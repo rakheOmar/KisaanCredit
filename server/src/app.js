@@ -52,6 +52,8 @@ import paymentRouter from "./routes/payment.routes.js";
 import chatbotRoutes from "./routes/chat.routes.js";
 import chatRouter from "./routes/chat.routes.js";
 import regionRouter from "./routes/region.routes.js";
+import farmerRouter from "./routes/farmer.routes.js";
+import farmActivityRoutes from "./routes/farmActivity.routes.js";
 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/healthcheck", healthcheckRouter);
@@ -59,6 +61,8 @@ app.use("/api/v1/payments", paymentRouter);
 app.use("/api/v1/chatbot", chatbotRoutes);
 app.use("/api/v1/chat", chatRouter);
 app.use("/api/v1/regions", regionRouter);
+app.use("/api/v1/farmers", farmerRouter);
+app.use("/api/v1/farm-activity", farmActivityRoutes);
 
 io.on("connection", (socket) => {
   console.log(`Socket.IO client connected: ${socket.id}`);
