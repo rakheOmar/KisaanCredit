@@ -55,6 +55,14 @@ const userSchema = new Schema(
     refreshToken: {
       type: String,
     },
+    carbonCredits: {
+      type: Number,
+      default: 0,
+    },
+    moneyEarned: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

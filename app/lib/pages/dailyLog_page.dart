@@ -46,11 +46,11 @@ class _DailyLogPageState extends State<DailyLogPage> {
       'water_status': 'Water Status',
       'fertilizer_type': 'Fertilizer Type',
       'fertilizer_amount': 'Fertilizer Amount',
-      'upload_image': 'Upload Image',
+      'upload_image': 'Upload Crop Image',
       'choose_image': 'Choose Image',
       'save': 'Save',
       'listening': 'Listening...',
-      'tap_to_speak': 'Tap to speak',
+      'tap_to_speak': 'Tap the mic and describe your daily activity...',
       'flooded': 'Flooded',
       'wet': 'Wet',
       'moist': 'Moist',
@@ -60,28 +60,34 @@ class _DailyLogPageState extends State<DailyLogPage> {
       'potash': 'Potash',
       'organic_compost': 'Organic Compost',
       'fertilizer_amount_kg': 'Fertilizer Amount in kilograms',
-      'crop_type': 'Crop Type',
+      'crop_type': 'Detected Crop Type',
+      'change_crop': 'Change Crop (Manual)',
+      'detecting': 'Detecting...',
+      'unknown': 'Unknown',
     },
     'hi': {
       'add_daily_log': 'दैनिक लॉग जोड़ें',
       'water_status': 'जल स्तर',
       'fertilizer_type': 'उर्वरक प्रकार',
       'fertilizer_amount': 'उर्वरक मात्रा',
-      'upload_image': 'छवि अपलोड करें',
+      'upload_image': 'फसल की छवि अपलोड करें',
       'choose_image': 'छवि चुनें',
       'save': 'सहेजें',
       'listening': 'सुन रहे हैं...',
-      'tap_to_speak': 'बोलने के लिए टैप करें',
+      'tap_to_speak': 'माइक टैप करें और अपनी दैनिक गतिविधि का वर्णन करें...',
       'flooded': 'बाढ़ ग्रस्त',
       'wet': 'गीला',
       'moist': 'नमी',
       'dry': 'सूखा',
-      'urea': 'यूरेआ',
-      'dap': 'DAP',
+      'urea': 'यूरिया',
+      'dap': 'डीएपी',
       'potash': 'पोटाश',
       'organic_compost': 'जैविक खाद',
       'fertilizer_amount_kg': 'किलोग्राम में उर्वरक की मात्रा',
-      'crop_type': 'फसल का प्रकार',
+      'crop_type': 'पहचाना गया फसल प्रकार',
+      'change_crop': 'फसल बदलें (मैनुअल)',
+      'detecting': 'पता लगाया जा रहा है...',
+      'unknown': 'अज्ञात',
     },
   };
 
@@ -100,6 +106,8 @@ class _DailyLogPageState extends State<DailyLogPage> {
     initSpeech();
     loadJwtToken();
   }
+
+  // --- LOGIC FUNCTIONS (UNCHANGED) ---
 
   Future<void> loadJwtToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -156,7 +164,7 @@ class _DailyLogPageState extends State<DailyLogPage> {
             _waterStatus = "Moist";
           if (words.contains("dry") || words.contains("सूखा"))
             _waterStatus = "Dry";
-          if (words.contains("urea") || words.contains("यूरेआ"))
+          if (words.contains("urea") || words.contains("यूरिया"))
             _fertilizerType = "Urea";
           if (words.contains("dap")) _fertilizerType = "DAP";
           if (words.contains("potash") || words.contains("पोटाश"))
@@ -186,15 +194,13 @@ class _DailyLogPageState extends State<DailyLogPage> {
     if (pickedFile != null) {
       setState(() {
         _imageFile = File(pickedFile.path);
-        _cropType = "Detecting..."; // Show detecting status to user
+        _cropType = t("detecting");
       });
       await detectCropType(_imageFile!);
     }
   }
 
-  // --- CROP DETECTION METHOD WITH A HUGE KEYWORD DICTIONARY ---
   Future<void> detectCropType(File imageFile) async {
-    // This dictionary holds all keywords. The KEY is the final crop name.
     final Map<String, List<String>> cropKeywords = {
       'Rice': ['rice', 'paddy', 'chawal', 'dhan', 'oryza'],
       'Wheat': ['wheat', 'gehu', 'kanak', 'triticum'],
@@ -222,56 +228,34 @@ class _DailyLogPageState extends State<DailyLogPage> {
 
     String? foundCrop;
     final inputImage = InputImage.fromFile(imageFile);
-    print("--- Starting Crop Detection ---");
 
-    // --- STAGE 1: TRY IMAGE LABELING ---
     try {
-      print("[Stage 1] Initializing and running Image Labeler...");
       final imageLabeler = ImageLabeler(
         options: ImageLabelerOptions(confidenceThreshold: 0.65),
-      ); // Lowered threshold slightly
+      );
       final List<ImageLabel> labels = await imageLabeler.processImage(
         inputImage,
       );
       await imageLabeler.close();
 
-      print(
-        "[Stage 1] Found ${labels.length} labels. Checking against keyword dictionary...",
-      );
-
-      // Loop through each label returned by the ML model
       for (ImageLabel label in labels) {
         String currentLabel = label.label.toLowerCase();
-        print("  - Analyzing label: '$currentLabel'");
-
-        // Loop through our crop dictionary
         for (var entry in cropKeywords.entries) {
-          String cropName = entry.key;
-          List<String> keywords = entry.value;
-
-          // Check if the current label contains any of the keywords for this crop
-          for (String keyword in keywords) {
+          for (String keyword in entry.value) {
             if (currentLabel.contains(keyword)) {
-              foundCrop = cropName;
-              print(
-                "[Stage 1] SUCCESS: Label '$currentLabel' matched keyword '$keyword'. Crop identified as '$foundCrop'.",
-              );
-              break; // Exit keyword loop
+              foundCrop = entry.key;
+              break;
             }
           }
-          if (foundCrop != null) break; // Exit crop dictionary loop
+          if (foundCrop != null) break;
         }
-        if (foundCrop != null) break; // Exit label loop
+        if (foundCrop != null) break;
       }
     } catch (e) {
-      print("[Stage 1] ERROR: Image Labeling failed with an exception: $e");
+      print("Image labeling failed: $e");
     }
 
-    // --- STAGE 2: FALLBACK TO TEXT RECOGNITION ---
     if (foundCrop == null) {
-      print(
-        "[Stage 1] FAILED: No relevant crop found in labels. Falling back to Stage 2 (Text Recognition).",
-      );
       try {
         final textRecognizer = TextRecognizer(
           script: TextRecognitionScript.latin,
@@ -282,32 +266,23 @@ class _DailyLogPageState extends State<DailyLogPage> {
         await textRecognizer.close();
 
         String detectedText = recognizedText.text.toLowerCase();
-        print("[Stage 2] Detected Text: '$detectedText'");
-
         for (var entry in cropKeywords.entries) {
-          String cropName = entry.key;
-          List<String> keywords = entry.value;
-          for (String keyword in keywords) {
+          for (String keyword in entry.value) {
             if (detectedText.contains(keyword)) {
-              foundCrop = cropName;
-              print(
-                "[Stage 2] SUCCESS: Text matched keyword '$keyword'. Crop identified as '$foundCrop'.",
-              );
+              foundCrop = entry.key;
               break;
             }
           }
           if (foundCrop != null) break;
         }
       } catch (e) {
-        print("[Stage 2] ERROR: Text Recognition failed with an exception: $e");
+        print("Text recognition failed: $e");
       }
     }
 
-    // --- STAGE 3: UPDATE THE UI ---
     setState(() {
-      _cropType = foundCrop ?? "Unknown";
+      _cropType = foundCrop ?? t("unknown");
     });
-    print("--- Crop Detection Finished. Final result: $_cropType ---");
   }
 
   Future<void> saveDailyLog() async {
@@ -340,6 +315,7 @@ class _DailyLogPageState extends State<DailyLogPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Daily log saved successfully")),
         );
+        Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
@@ -374,6 +350,37 @@ class _DailyLogPageState extends State<DailyLogPage> {
     super.dispose();
   }
 
+  // --- UI WIDGETS (REFINED) ---
+
+  Widget _buildSectionHeader(String titleKey, {String? subtitleKey}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                t(titleKey),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+            IconButton(
+              icon: Icon(Icons.volume_up, color: Colors.green.shade700),
+              onPressed: () => speak(t(subtitleKey ?? titleKey)),
+              visualDensity: VisualDensity.compact,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final List<String> manualCropSelectionList = [
@@ -388,23 +395,39 @@ class _DailyLogPageState extends State<DailyLogPage> {
       'Potato',
     ];
 
+    final Color cardColor = Colors.white;
+    final double cardElevation = 2.0;
+    final ShapeBorder cardShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+      side: BorderSide(color: Colors.grey.shade200, width: 1),
+    );
+
     return Scaffold(
+      backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
+        // *** CHANGED HERE ***
         title: Text(t('add_daily_log')),
-        backgroundColor: Colors.green,
+        backgroundColor: Colors.white, // Changed to white
+        foregroundColor: Colors.black87, // Changed to black
+        elevation: 1, // Added subtle elevation
+        // *** END OF CHANGES ***
         actions: [
           DropdownButton<String>(
             value: _currentLanguage,
             underline: const SizedBox(),
-            dropdownColor: Colors.green,
-            icon: const Icon(Icons.language, color: Colors.white),
+            dropdownColor: const Color.fromARGB(255, 244, 244, 244),
+            // Icon color is now inherited from foregroundColor
+            icon: const Icon(Icons.language),
             items: translations.keys
                 .map(
                   (lang) => DropdownMenuItem(
                     value: lang,
                     child: Text(
                       lang.toUpperCase(),
-                      style: const TextStyle(color: Colors.white),
+                      // Text color in dropdown changed to white for readability on green bg
+                      style: const TextStyle(
+                        color: Color.fromARGB(255, 0, 0, 0),
+                      ),
                     ),
                   ),
                 )
@@ -415,164 +438,202 @@ class _DailyLogPageState extends State<DailyLogPage> {
           ),
         ],
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Speech Button, Water Status, Fertilizer, etc. (No changes here)
-              // ... (Previous UI code remains the same)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      _isListening ? Icons.mic : Icons.mic_none,
-                      size: 40,
-                    ),
-                    onPressed: _isListening ? stopListening : startListening,
-                  ),
-                  const SizedBox(width: 16),
-                  Text(_isListening ? t('listening') : t('tap_to_speak')),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Text(t("water_status")),
-                  IconButton(
-                    icon: const Icon(Icons.volume_up, color: Colors.blue),
-                    onPressed: () => speak(t("water_status")),
-                  ),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: ["Flooded", "Wet", "Moist", "Dry"]
-                    .map(
-                      (status) => ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _waterStatus == status
-                              ? Colors.green
-                              : Colors.grey,
-                        ),
-                        onPressed: () => setState(() => _waterStatus = status),
-                        child: Text(t(status.toLowerCase())),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- Voice Input ---
+            Card(
+              elevation: cardElevation,
+              shape: cardShape,
+              color: cardColor,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    Text(
+                      _isListening ? t('listening') : t('tap_to_speak'),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey.shade700,
                       ),
-                    )
-                    .toList(),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Text(t("fertilizer_type")),
-                  IconButton(
-                    icon: const Icon(Icons.volume_up, color: Colors.blue),
-                    onPressed: () => speak(t("fertilizer_type")),
-                  ),
-                ],
-              ),
-              Wrap(
-                spacing: 8,
-                children: ["Urea", "DAP", "Potash", "Organic Compost"]
-                    .map(
-                      (type) => ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _fertilizerType == type
-                              ? Colors.green
-                              : Colors.grey,
-                        ),
-                        onPressed: () => setState(() => _fertilizerType = type),
-                        child: Text(t(type.toLowerCase().replaceAll(' ', '_'))),
-                      ),
-                    )
-                    .toList(),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Text(t("fertilizer_amount")),
-                  IconButton(
-                    icon: const Icon(Icons.volume_up, color: Colors.blue),
-                    onPressed: () => speak(t("fertilizer_amount_kg")),
-                  ),
-                ],
-              ),
-              Slider(
-                min: 0,
-                max: 100,
-                divisions: 20,
-                value: _fertilizerAmount,
-                label: "${_fertilizerAmount.round()} kg",
-                onChanged: (val) => setState(() => _fertilizerAmount = val),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Text(t("upload_image")),
-                  IconButton(
-                    icon: const Icon(Icons.volume_up, color: Colors.blue),
-                    onPressed: () => speak(t("upload_image")),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  ElevatedButton(
-                    onPressed: pickImage,
-                    child: Text(t("choose_image")),
-                  ),
-                  const SizedBox(width: 16),
-                  if (_imageFile != null)
-                    Image.file(
-                      _imageFile!,
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
                     ),
-                ],
+                    const SizedBox(height: 10),
+                    IconButton(
+                      icon: Icon(
+                        _isListening ? Icons.mic : Icons.mic_none,
+                        size: 48,
+                        color: _isListening
+                            ? Colors.red.shade700
+                            : Colors.green.shade700,
+                      ),
+                      onPressed: _isListening ? stopListening : startListening,
+                    ),
+                  ],
+                ),
               ),
+            ),
+            const SizedBox(height: 20),
 
-              // --- UPDATED Crop Type Display and Manual Correction ---
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
+            // --- Water Status ---
+            Card(
+              elevation: cardElevation,
+              shape: cardShape,
+              color: cardColor,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "${t('crop_type')}: ${(_cropType == null) ? 'Not selected' : _cropType}",
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                    _buildSectionHeader("water_status"),
+                    Wrap(
+                      spacing: 8,
+                      children: ["Flooded", "Wet", "Moist", "Dry"]
+                          .map(
+                            (status) => ChoiceChip(
+                              label: Text(t(status.toLowerCase())),
+                              selected: _waterStatus == status,
+                              onSelected: (_) =>
+                                  setState(() => _waterStatus = status),
+                              selectedColor: Colors.green.shade100,
+                              labelStyle: TextStyle(
+                                color: _waterStatus == status
+                                    ? Colors.green.shade900
+                                    : Colors.black87,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // --- Fertilizer ---
+            Card(
+              elevation: cardElevation,
+              shape: cardShape,
+              color: cardColor,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionHeader("fertilizer_type"),
+                    Wrap(
+                      spacing: 8,
+                      children: ["Urea", "DAP", "Potash", "Organic Compost"]
+                          .map(
+                            (type) => ChoiceChip(
+                              label: Text(
+                                t(type.toLowerCase().replaceAll(' ', '_')),
+                              ),
+                              selected: _fertilizerType == type,
+                              onSelected: (_) =>
+                                  setState(() => _fertilizerType = type),
+                              selectedColor: Colors.green.shade100,
+                              labelStyle: TextStyle(
+                                color: _fertilizerType == type
+                                    ? Colors.green.shade900
+                                    : Colors.black87,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSectionHeader(
+                      "fertilizer_amount",
+                      subtitleKey: "fertilizer_amount_kg",
+                    ),
+                    Slider(
+                      min: 0,
+                      max: 100,
+                      divisions: 20,
+                      value: _fertilizerAmount,
+                      label: "${_fertilizerAmount.round()} kg",
+                      onChanged: (val) =>
+                          setState(() => _fertilizerAmount = val),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // --- Image Upload ---
+            Card(
+              elevation: cardElevation,
+              shape: cardShape,
+              color: cardColor,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSectionHeader("upload_image"),
+                    if (_imageFile != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.file(
+                            _imageFile!,
+                            height: 180,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ElevatedButton.icon(
+                      onPressed: pickImage,
+                      icon: const Icon(Icons.image_search),
+                      label: Text(t("choose_image")),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 45),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     ),
-                    if (_cropType == 'Unknown')
+                    if (_imageFile != null)
                       Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
+                        padding: const EdgeInsets.only(top: 16.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              "Detection failed. Please select the crop manually:",
-                              style: TextStyle(color: Colors.red),
+                            Text(
+                              "${t("crop_type")}: ${_cropType ?? t('detecting')}",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
                             ),
-                            Wrap(
-                              spacing: 8.0,
-                              children: manualCropSelectionList.map((crop) {
-                                return ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.orange,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _cropType = crop;
-                                    });
-                                  },
-                                  child: Text(crop),
-                                );
-                              }).toList(),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<String>(
+                              value: manualCropSelectionList.contains(_cropType)
+                                  ? _cropType
+                                  : null,
+                              decoration: InputDecoration(
+                                labelText: t('change_crop'),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              items: manualCropSelectionList
+                                  .map(
+                                    (crop) => DropdownMenuItem(
+                                      value: crop,
+                                      child: Text(crop),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (val) =>
+                                  setState(() => _cropType = val),
                             ),
                           ],
                         ),
@@ -580,16 +641,30 @@ class _DailyLogPageState extends State<DailyLogPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: saveDailyLog,
-                  child: Text(t('save')),
+            ),
+            const SizedBox(height: 30),
+
+            // --- Save Button ---
+            Center(
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.save_alt_rounded),
+                onPressed: saveDailyLog,
+                label: Text(t("save"), style: const TextStyle(fontSize: 18)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green[800],
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 50,
+                    vertical: 15,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );

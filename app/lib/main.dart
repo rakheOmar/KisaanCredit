@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import './pages/carbonCalculator.dart';
 import './pages/signup_page.dart';
 import './pages/login_page.dart';
+import './pages/resource_hub_page.dart';
 
 void main() {
   runApp(MyApp());
@@ -9,20 +10,52 @@ void main() {
 
 // ---------------- Main App ----------------
 class MyApp extends StatelessWidget {
+  final Color primaryColor = Colors.green[600]!;
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Tributum',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+        colorScheme: ColorScheme.fromSeed(seedColor: primaryColor),
         fontFamily: 'Inter',
         useMaterial3: true,
+        textTheme: TextTheme(
+          displayLarge: TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1F2937),
+          ),
+          displayMedium: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1F2937),
+          ),
+          displaySmall: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1F2937),
+          ),
+          bodyLarge: TextStyle(fontSize: 18, color: Color(0xFF4B5563)),
+          bodyMedium: TextStyle(fontSize: 16, color: Color(0xFF4B5563)),
+          titleLarge: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1F2937),
+          ),
+          labelLarge: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
       ),
       home: LandingPage(),
       routes: {
         '/carbon-calculator': (context) => CarbonCalculatorPage(),
         '/signup': (context) => SignupPage(),
         '/login': (context) => LoginPage(),
+        '/resources': (context) => ResourceHubPage(),
       },
       debugShowCheckedModeBanner: false,
     );
@@ -55,6 +88,7 @@ class LandingPage extends StatelessWidget {
 }
 
 // ---------------- AppBar ----------------
+// ---------------- AppBar ----------------
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => Size.fromHeight(60.0);
@@ -79,7 +113,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
           SizedBox(width: 10),
           Text(
-            'Tributum ',
+            'Tributum',
             style: TextStyle(
               fontWeight: FontWeight.w700,
               color: Color(0xFF1F2937),
@@ -89,6 +123,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         ],
       ),
+      // Only show desktop actions; small screens use default left hamburger
       actions: isDesktop
           ? [
               _NavButton(label: 'Features', onTap: () {}),
@@ -130,14 +165,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
               SizedBox(width: 20),
             ]
-          : [
-              Builder(
-                builder: (context) => IconButton(
-                  icon: Icon(Icons.menu, color: Color(0xFF1F2937)),
-                  onPressed: () => Scaffold.of(context).openDrawer(),
-                ),
-              ),
-            ],
+          : null, // <-- No right-side hamburger
     );
   }
 }
@@ -244,17 +272,13 @@ class HeroSection extends StatelessWidget {
           Text(
             "Measure, Report, and Verify Carbon Impact",
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1F2937),
-            ),
+            style: Theme.of(context).textTheme.displayLarge,
           ),
           SizedBox(height: 20),
           Text(
             "A modern MRV platform to track emissions and unlock climate finance.",
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 18, color: Color(0xFF4B5563)),
+            style: Theme.of(context).textTheme.bodyLarge,
           ),
           SizedBox(height: 40),
           Wrap(
@@ -277,10 +301,20 @@ class HeroSection extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: Text("Access Platform Now"),
+                child: Text(
+                  "Access Platform Now",
+                  style: TextStyle(
+                    color: const Color.fromARGB(255, 255, 255, 255),
+                  ),
+                ),
               ),
               OutlinedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.pushNamed(
+                    context,
+                    '/resources',
+                  ); // <-- Navigate here
+                },
                 style: OutlinedButton.styleFrom(
                   padding: EdgeInsets.symmetric(horizontal: 32, vertical: 18),
                   textStyle: TextStyle(
@@ -313,10 +347,7 @@ class StatsSection extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: 60, horizontal: 24),
       child: Column(
         children: [
-          Text(
-            "Our Impact",
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-          ),
+          Text("Our Impact", style: Theme.of(context).textTheme.displayLarge),
           SizedBox(height: 40),
           Wrap(
             spacing: 40,
@@ -360,16 +391,9 @@ class StatItem extends StatelessWidget {
       children: [
         Icon(icon, size: 40, color: Colors.green[600]),
         SizedBox(height: 16),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1F2937),
-          ),
-        ),
+        Text(value, style: Theme.of(context).textTheme.displayMedium),
         SizedBox(height: 8),
-        Text(label, style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+        Text(label, style: Theme.of(context).textTheme.bodyMedium),
       ],
     );
   }
@@ -386,13 +410,13 @@ class FeaturesSection extends StatelessWidget {
         children: [
           Text(
             "Complete MRV Solution",
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.displayLarge,
           ),
           SizedBox(height: 16),
           Text(
             "Our platform integrates technology to provide end-to-end monitoring, reporting, and verification of carbon credits.",
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 18, color: Color(0xFF4B5563)),
+            style: Theme.of(context).textTheme.bodyLarge,
           ),
           SizedBox(height: 48),
           Wrap(
@@ -477,15 +501,9 @@ class FeatureCard extends StatelessWidget {
             child: Icon(icon, color: Colors.green[700], size: 32),
           ),
           SizedBox(height: 16),
-          Text(
-            title,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
+          Text(title, style: Theme.of(context).textTheme.titleLarge),
           SizedBox(height: 8),
-          Text(
-            description,
-            style: TextStyle(fontSize: 16, color: Color(0xFF4B5563)),
-          ),
+          Text(description, style: Theme.of(context).textTheme.bodyMedium),
         ],
       ),
     );
@@ -500,15 +518,12 @@ class HowItWorksSection extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: 80, horizontal: 24),
       child: Column(
         children: [
-          Text(
-            "How It Works",
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-          ),
+          Text("How It Works", style: Theme.of(context).textTheme.displayLarge),
           SizedBox(height: 16),
           Text(
             "From data collection to payment, our streamlined process makes carbon credit generation simple and transparent.",
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 18, color: Color(0xFF4B5563)),
+            style: Theme.of(context).textTheme.bodyLarge,
           ),
           SizedBox(height: 64),
           Wrap(
@@ -568,15 +583,12 @@ class StepItem extends StatelessWidget {
           child: Icon(icon, color: Colors.white, size: 28),
         ),
         SizedBox(height: 16),
-        Text(
-          title,
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
+        Text(title, style: Theme.of(context).textTheme.titleLarge),
         SizedBox(height: 8),
         Text(
           description,
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16, color: Color(0xFF4B5563)),
+          style: Theme.of(context).textTheme.bodyMedium,
         ),
       ],
     );
@@ -594,7 +606,7 @@ class BenefitsSection extends StatelessWidget {
         children: [
           Text(
             "Why Choose Us",
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.displayLarge,
           ),
           SizedBox(height: 48),
           Wrap(
@@ -661,15 +673,12 @@ class BenefitCard extends StatelessWidget {
         children: [
           Icon(icon, color: Colors.green[700], size: 48),
           SizedBox(height: 16),
-          Text(
-            title,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
+          Text(title, style: Theme.of(context).textTheme.titleLarge),
           SizedBox(height: 8),
           Text(
             description,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, color: Color(0xFF4B5563)),
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
       ),
@@ -688,35 +697,33 @@ class CtaSection extends StatelessWidget {
         children: [
           Text(
             "Ready to Start?",
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.displayLarge!.copyWith(color: Colors.white),
           ),
           SizedBox(height: 16),
           Text(
-            "Join thousands of farmers generating verified carbon credits with our platform.",
+            "Join thousands of farmers and organizations driving real climate impact.",
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 18, color: Colors.white70),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge!.copyWith(color: Colors.white70),
           ),
           SizedBox(height: 40),
           ElevatedButton(
             onPressed: () {
-              Navigator.pushNamed(context, '/carbon-calculator');
+              Navigator.pushNamed(context, '/signup');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(horizontal: 48, vertical: 24),
-              textStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              foregroundColor: Colors.green[600],
+              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 18),
+              textStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: Text(
-              "Access Platform Now",
-              style: TextStyle(color: Colors.green[600]),
-            ),
+            child: Text("Get Started"),
           ),
         ],
       ),
@@ -729,24 +736,13 @@ class FooterSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.grey[900],
+      color: Colors.grey[100],
       padding: EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-      child: Column(
-        children: [
-          Text(
-            "© 2025 MRV Platform. All rights reserved.",
-            style: TextStyle(color: Colors.white70, fontSize: 14),
-          ),
-          SizedBox(height: 16),
-          Wrap(
-            spacing: 24,
-            children: [
-              Text("Privacy Policy", style: TextStyle(color: Colors.white70)),
-              Text("Terms of Service", style: TextStyle(color: Colors.white70)),
-              Text("Contact", style: TextStyle(color: Colors.white70)),
-            ],
-          ),
-        ],
+      child: Center(
+        child: Text(
+          "© 2025 Tributum. All rights reserved.",
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
       ),
     );
   }
