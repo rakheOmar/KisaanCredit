@@ -80,6 +80,7 @@ const fetchDailyLogs = asyncHandler(async (req, res) => {
   // Return the complete log objects directly
   return res.status(200).json(new ApiResponse(200, "Daily logs fetched successfully", logs));
 });
+
 const getSeasonalLogs = asyncHandler(async (req, res) => {
   const { farmerId } = req.params;
 
@@ -97,11 +98,9 @@ const getSeasonalLogs = asyncHandler(async (req, res) => {
 });
 
 const getDailyLogs = asyncHandler(async (req, res) => {
-  const { seasonalLogId } = req.params;
+  const { farmerId } = req.params;
 
-  const dailyLogs = await DailyLog.find({ seasonalLog: seasonalLogId })
-    .populate("seasonalLog")
-    .populate("seasonalLog.farmer", "-password -refreshToken");
+  const dailyLogs = await DailyLog.find({ farmerId: farmerId }).sort({ date: -1 }).lean();
 
   if (!dailyLogs || dailyLogs.length === 0) {
     return res.status(404).json(new ApiResponse(404, "No daily logs found", null));
@@ -110,4 +109,21 @@ const getDailyLogs = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, "Daily logs fetched successfully", dailyLogs));
 });
 
-export { updateFarmerLandPlot, createDailyLog, fetchDailyLogs, getSeasonalLogs, getDailyLogs };
+const getAllFarmers = asyncHandler(async (req, res) => {
+  const farmers = await User.find({ role: "Farmer" }).select("-password -refreshToken");
+
+  if (!farmers || farmers.length === 0) {
+    return res.status(404).json(new ApiResponse(404, null, "No farmers found"));
+  }
+
+  return res.status(200).json(new ApiResponse(200, "Farmers fetched successfully", farmers));
+});
+
+export {
+  updateFarmerLandPlot,
+  createDailyLog,
+  fetchDailyLogs,
+  getSeasonalLogs,
+  getDailyLogs,
+  getAllFarmers,
+};

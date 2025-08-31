@@ -5,7 +5,7 @@ import https from "https";
 
 export const getLandCoverFromBhuvan = async (lon, lat) => {
   try {
-    const url = `https://bhuvan-app1.nrsc.gov.in/api/lulc250k/curl_lulc250k_point.php?lon=${lon}&lat=${lat}&year=2018_19&token=780632e7fbb0a60e6fb9e867ee6d185aeaa79d72`;
+    const url = `https://bhuvan-app1.nrsc.gov.in/api/lulc250k/curl_lulc250k_point.php?lon=${lon}&lat=${lat}&year=2018_19&token=3f4bbae03ab7cc2b053efbd73daf9b10113306e4`;
 
     console.log("Fetching Bhuvan API:", url);
 

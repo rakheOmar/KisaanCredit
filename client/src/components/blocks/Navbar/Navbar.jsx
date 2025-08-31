@@ -74,8 +74,8 @@ export default function Navbar() {
 
   const getDashboardPath = () => {
     switch (user?.role) {
-      case "student":
-        return "/dashboard-student";
+      case "Project Developer":
+        return "/dashboard-project";
       case "client":
         return "/dashboard-business";
       default:

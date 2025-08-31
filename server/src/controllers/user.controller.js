@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/apiResponse.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 const generateAccessAndRefreshTokens = async (userId) => {
   const user = await User.findById(userId);
@@ -166,12 +167,15 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 });
 
 const getUserProfile = asyncHandler(async (req, res) => {
-  const { username } = req.params;
-  if (!username?.trim()) throw new ApiError(400, "Username is required");
+  const { id } = req.params;
+  if (!id?.trim()) throw new ApiError(400, "User ID is required");
 
-  const user = await User.findOne({ username: username.toLowerCase() }).select(
-    "-password -refreshToken"
-  );
+  // Optional: Validate if 'id' is a valid MongoDB ObjectId
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(400, "Invalid user ID");
+  }
+
+  const user = await User.findById(id).select("-password -refreshToken");
   if (!user) throw new ApiError(404, "User not found");
 
   return res.status(200).json(new ApiResponse(200, "User profile fetched successfully", user));
