@@ -7,25 +7,16 @@ import { Navigate } from "react-router-dom";
 import "@geoman-io/leaflet-geoman-free";
 import "@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css";
 import axiosInstance from "@/lib/axios";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 
 // Fix leaflet marker icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
 const DrawingComponent = ({ setMapInstance }) => {
@@ -150,10 +141,10 @@ const GeoRegionSelectorPage = () => {
   const handleCarbonCreditsSubmit = () => {
     if (!user) {
       // Redirect to login/register if not authenticated
-      window.location.href = '/login'; // or use navigate if you have react-router
+      window.location.href = "/login"; // or use navigate if you have react-router
       return;
     }
-    
+
     // If user is authenticated, you can process the carbon credits
     toast.success("Carbon credits submitted successfully!");
     // Add your carbon credits processing logic here
@@ -178,44 +169,40 @@ const GeoRegionSelectorPage = () => {
 
       // Extract data from the response
       const responseData = res.data.data || {};
-      const {
-        ndvi,
-        landCoverType: landCover,
-        detectedCrops = []
-      } = responseData;
+      const { ndvi, landCoverType: landCover, detectedCrops = [] } = responseData;
 
       console.log("📊 Extracted data:", { ndvi, landCover, detectedCrops }); // Debug log
-      console.log("📊 State before update:", { 
-        currentCropsDetected: cropsDetected, 
+      console.log("📊 State before update:", {
+        currentCropsDetected: cropsDetected,
         currentLandCoverType: landCoverType,
-        currentNDVI: analysisData.ndvi 
+        currentNDVI: analysisData.ndvi,
       });
 
       // Set land cover type
       setLandCoverType(landCover);
 
       // Set NDVI
-      setAnalysisData(prev => ({ ...prev, ndvi: ndvi ?? null }));
+      setAnalysisData((prev) => ({ ...prev, ndvi: ndvi ?? null }));
 
       // Process detected crops
       if (detectedCrops && detectedCrops.length > 0) {
         // Store full crop data
         setDetectedCropsData(detectedCrops);
-        
+
         // Extract crop names for display
-        const cropNames = detectedCrops.map(crop => crop.crop);
+        const cropNames = detectedCrops.map((crop) => crop.crop);
         setCropsDetected(cropNames);
 
         // Use the first crop's AWB value for display (or you could average them)
         const firstCrop = detectedCrops[0];
         const awbValue = firstCrop.awb;
-        setAnalysisData(prev => ({ ...prev, awb: awbValue }));
+        setAnalysisData((prev) => ({ ...prev, awb: awbValue }));
 
         // Calculate carbon estimate using the first crop's AWB and coefficients
         if (awbValue && firstCrop.a) {
           const carbonEst = (awbValue * firstCrop.a).toFixed(2);
           setCarbonEstimate(carbonEst);
-          
+
           // Calculate carbon credits (assuming 1 tCO2 = 1 credit, with area scaling)
           const areaInHa = parseFloat(areaHectares) || 1;
           const creditsPerHectare = parseFloat(carbonEst) * 0.1; // 10% of carbon as credits
@@ -230,25 +217,25 @@ const GeoRegionSelectorPage = () => {
         console.log("❌ No crops detected");
         setCropsDetected([]);
         setDetectedCropsData([]);
-        setAnalysisData(prev => ({ ...prev, awb: null }));
+        setAnalysisData((prev) => ({ ...prev, awb: null }));
         setCarbonEstimate(null);
         setCarbonCredits(null);
-        
+
         // Show land cover type even if no specific crops detected
         if (landCover) {
           toast.info(`Land cover detected: ${landCover}, but no specific crop models found.`);
         }
       }
 
-      console.log("📊 State after update:", { 
+      console.log("📊 State after update:", {
         newCropsDetected: cropsDetected.length > 0 ? cropsDetected : "empty",
         newLandCoverType: landCover,
-        newNDVI: ndvi 
+        newNDVI: ndvi,
       });
 
       toast.success("Analysis complete!", { id: toastId });
       setAnalysisComplete(true);
-      
+
       // Don't reset the shape immediately - let user see the results
       // mapInstance.pm.getGeomanLayers().forEach((l) => mapInstance.removeLayer(l));
       // resetShape();
@@ -273,7 +260,8 @@ const GeoRegionSelectorPage = () => {
           <CardHeader>
             <CardTitle>Crop Carbon Analysis</CardTitle>
             <CardDescription>
-              Draw farm boundary and estimate NDVI, AWB & Carbon. Crops will be detected automatically.
+              Draw farm boundary and estimate NDVI, AWB & Carbon. Crops will be detected
+              automatically.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -285,7 +273,7 @@ const GeoRegionSelectorPage = () => {
               >
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; OpenStreetMap contributors'
+                  attribution="&copy; OpenStreetMap contributors"
                 />
                 <DrawingComponent setMapInstance={setMapInstance} />
               </MapContainer>
@@ -296,18 +284,14 @@ const GeoRegionSelectorPage = () => {
               <InfoBlock title="Area (ha)" data={areaHectares} placeholder="Draw boundary..." />
               <InfoBlock
                 title="Centroid (lat, lon)"
-                data={
-                  centroid
-                    ? `${centroid[1].toFixed(4)}, ${centroid[0].toFixed(4)}`
-                    : null
-                }
+                data={centroid ? `${centroid[1].toFixed(4)}, ${centroid[0].toFixed(4)}` : null}
                 placeholder="Draw boundary..."
               />
               <InfoBlock
                 title="NDVI & AWB"
                 data={
                   analysisData.ndvi !== null
-                    ? `NDVI: ${analysisData.ndvi?.toFixed(3)}, AWB: ${analysisData.awb?.toFixed(3) || 'N/A'}`
+                    ? `NDVI: ${analysisData.ndvi?.toFixed(3)}, AWB: ${analysisData.awb?.toFixed(3) || "N/A"}`
                     : null
                 }
                 placeholder="Submit for analysis..."
@@ -339,16 +323,21 @@ const GeoRegionSelectorPage = () => {
             {cropsDetected.length > 0 && (
               <div className="mt-6">
                 <h3 className="font-semibold mb-2">Crops Detected:</h3>
-                  <div className="space-y-2">
+                <div className="space-y-2">
                   {detectedCropsData.map((crop, index) => (
-                    <div key={index} className="p-4 rounded-md bg-green-100 dark:bg-green-800 text-sm">
+                    <div
+                      key={index}
+                      className="p-4 rounded-md bg-green-100 dark:bg-green-800 text-sm"
+                    >
                       <div className="font-medium">{crop.crop}</div>
                       <div className="text-xs text-gray-600 dark:text-gray-300 mt-1">
-                        Region: {crop.region} | AWB: {crop.awb?.toFixed(3)} | 
-                        Model: a={crop.a}, b={crop.b}
-                        {crop.matchType && <span className="ml-2 px-2 py-1 bg-blue-200 dark:bg-blue-700 rounded text-xs">
-                          {crop.matchType} match
-                        </span>}
+                        Region: {crop.region} | AWB: {crop.awb?.toFixed(3)} | Model: a={crop.a}, b=
+                        {crop.b}
+                        {crop.matchType && (
+                          <span className="ml-2 px-2 py-1 bg-blue-200 dark:bg-blue-700 rounded text-xs">
+                            {crop.matchType} match
+                          </span>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -362,11 +351,13 @@ const GeoRegionSelectorPage = () => {
                 <div className="p-4 rounded-md bg-yellow-100 dark:bg-yellow-800 text-sm">
                   <div className="font-medium">No Matching Crop Models Found</div>
                   <div className="mt-2">
-                    Land cover detected: <strong>"{landCoverType}"</strong><br/>
-                    NDVI: <strong>{analysisData.ndvi}</strong><br/>
+                    Land cover detected: <strong>"{landCoverType}"</strong>
+                    <br />
+                    NDVI: <strong>{analysisData.ndvi}</strong>
+                    <br />
                     <span className="text-xs mt-1 block">
-                      This land cover type doesn't match any crop models in the database. 
-                      Consider adding crop models for this land cover type.
+                      This land cover type doesn't match any crop models in the database. Consider
+                      adding crop models for this land cover type.
                     </span>
                   </div>
                 </div>
@@ -398,10 +389,11 @@ const GeoRegionSelectorPage = () => {
                       </div>
                     </div>
                     <div className="text-sm text-gray-600 mb-4">
-                      Carbon credits calculated based on {detectedCropsData.length > 0 ? detectedCropsData[0].crop : 'detected crop'} 
+                      Carbon credits calculated based on{" "}
+                      {detectedCropsData.length > 0 ? detectedCropsData[0].crop : "detected crop"}
                       analysis for {areaHectares} hectares of {landCoverType}.
                     </div>
-                    <Button 
+                    <Button
                       onClick={handleCarbonCreditsSubmit}
                       className="w-full bg-green-600 hover:bg-green-700"
                       size="lg"
@@ -417,10 +409,7 @@ const GeoRegionSelectorPage = () => {
               <Button variant="secondary" onClick={resetShape}>
                 Reset Boundary
               </Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={!drawnGeoJSON || isSubmitting}
-              >
+              <Button onClick={handleSubmit} disabled={!drawnGeoJSON || isSubmitting}>
                 {isSubmitting ? "Submitting..." : "Analyze Crop"}
               </Button>
             </div>
@@ -434,11 +423,13 @@ const GeoRegionSelectorPage = () => {
 const InfoBlock = ({ title, data, placeholder, highlight = false }) => (
   <div>
     <h3 className="font-semibold mb-2">{title}</h3>
-    <div className={`p-4 rounded-md text-sm h-20 flex items-center ${
-      highlight 
-        ? 'bg-green-100 dark:bg-green-800 border-2 border-green-300 dark:border-green-600' 
-        : 'bg-slate-100 dark:bg-slate-800'
-    }`}>
+    <div
+      className={`p-4 rounded-md text-sm h-20 flex items-center ${
+        highlight
+          ? "bg-green-100 dark:bg-green-800 border-2 border-green-300 dark:border-green-600"
+          : "bg-slate-100 dark:bg-slate-800"
+      }`}
+    >
       {data || placeholder}
     </div>
   </div>

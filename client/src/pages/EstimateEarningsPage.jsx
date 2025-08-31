@@ -28,13 +28,18 @@ const DrawingComponent = ({ setMapInstance }) => {
 
 export default function EstimateEarningsPage() {
   const [mapInstance, setMapInstance] = useState(null);
-  const [userLocation, setUserLocation] = useState([51.505, -0.09]);
+  const [userLocation, setUserLocation] = useState([20.5937, 78.9629]); // India center
   const [drawnGeoJSON, setDrawnGeoJSON] = useState(null);
   const [centroid, setCentroid] = useState(null);
   const [ndvi, setNdvi] = useState(null);
   const [awb, setAwb] = useState(null);
   const [estimatedEarnings, setEstimatedEarnings] = useState(null);
+  const [carbonCredits, setCarbonCredits] = useState(null);
+  const [carbonEmission, setCarbonEmission] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [landCoverType, setLandCoverType] = useState(null);
+  const [detectedCrops, setDetectedCrops] = useState([]);
+  const [analysisComplete, setAnalysisComplete] = useState(false);
 
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -43,8 +48,9 @@ export default function EstimateEarningsPage() {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          setUserLocation([pos.coords.latitude, pos.coords.longitude]);
-          mapInstance?.setView([pos.coords.latitude, pos.coords.longitude], 13);
+          const coords = [pos.coords.latitude, pos.coords.longitude];
+          setUserLocation(coords);
+          mapInstance?.setView(coords, 13);
         },
         () => toast.error("Unable to fetch current location.")
       );
@@ -70,6 +76,11 @@ export default function EstimateEarningsPage() {
       const centerPoint = turfCentroid(geojson);
       setDrawnGeoJSON(geojson);
       setCentroid(centerPoint.geometry.coordinates);
+
+      // Auto fit bounds
+      const bounds = L.geoJSON(geojson).getBounds();
+      mapInstance.fitBounds(bounds, { padding: [20, 20] });
+
       toast.success("Boundary captured successfully!");
     };
 
@@ -79,6 +90,11 @@ export default function EstimateEarningsPage() {
       setNdvi(null);
       setAwb(null);
       setEstimatedEarnings(null);
+      setCarbonCredits(null);
+      setCarbonEmission(null);
+      setLandCoverType(null);
+      setDetectedCrops([]);
+      setAnalysisComplete(false);
     };
 
     const handleShapeEdited = (e) => {
@@ -125,46 +141,129 @@ export default function EstimateEarningsPage() {
       toast.error("Please draw a boundary first.");
       return;
     }
+
     setIsSubmitting(true);
-    const toastId = toast.loading("Submitting boundary data...");
+    const toastId = toast.loading("Analyzing crop data...");
+
     try {
       const res = await axiosInstance.post("/regions", {
         geojson: drawnGeoJSON,
         centroid: { type: "Point", coordinates: centroid },
       });
-      const res1 = await axiosInstance.post("/regions/ndvi", {
-        geojson: drawnGeoJSON,
-      });
-      console.log(res1);
 
-      const receivedNdvi = res.data?.data?.ndvi || 0;
-      const receivedAwb = res.data?.data?.awb || 0;
-      const a = res.data?.data?.a || 0;
-      const b = res.data?.data?.b || 0;
+      console.log("🔍 Full API Response:", res.data);
 
+      const responseData = res.data.data || {};
+      const { ndvi: receivedNdvi, landCoverType: landCover, detectedCrops = [] } = responseData;
+
+      console.log("📊 Extracted data:", { receivedNdvi, landCover, detectedCrops });
+
+      // Set basic data
       setNdvi(receivedNdvi);
-      setAwb(receivedAwb);
+      setLandCoverType(landCover);
 
+      // Calculate area in hectares
       const hectares = turfArea(drawnGeoJSON) / 10000;
-      const earnings = (hectares * (receivedNdvi * a + b)).toFixed(2);
-      setEstimatedEarnings(earnings);
 
-      toast.success("Boundary submitted and NDVI received!", { id: toastId });
+      if (detectedCrops && detectedCrops.length > 0) {
+        // Use first crop for calculations
+        const firstCrop = detectedCrops[0];
+        const { awb: awbValue, a = 1, b = 0 } = firstCrop;
 
-      const layers = mapInstance.pm.getGeomanLayers();
-      layers.forEach((l) => mapInstance.removeLayer(l));
-      mapInstance.pm.enableDraw("Polygon");
-      setDrawnGeoJSON(null);
-      setCentroid(null);
+        setAwb(awbValue);
+        setDetectedCrops(detectedCrops);
+
+        // Calculate carbon emission (tCO2)
+        const carbonEm = (awbValue * a).toFixed(2);
+        setCarbonEmission(carbonEm);
+
+        // Calculate carbon credits (10% of emission, scaled by area)
+        const creditsPerHectare = parseFloat(carbonEm) * 0.1;
+        const totalCredits = (creditsPerHectare * hectares).toFixed(2);
+        setCarbonCredits(totalCredits);
+
+        // Calculate estimated earnings (credits * price per credit)
+        const pricePerCredit = 50; // ₹50 per credit (adjust as needed)
+        const earnings = (parseFloat(totalCredits) * pricePerCredit).toFixed(2);
+        setEstimatedEarnings(earnings);
+
+        console.log("✅ Calculations:", {
+          hectares: hectares.toFixed(2),
+          carbonEm,
+          totalCredits,
+          earnings,
+        });
+      } else {
+        // No crops detected - use default calculation
+        setAwb(null);
+        setDetectedCrops([]);
+
+        // Basic calculation without crop-specific data
+        const basicCredits = (hectares * receivedNdvi * 0.5).toFixed(2); // Basic formula
+        setCarbonCredits(basicCredits);
+
+        const basicEarnings = (parseFloat(basicCredits) * 30).toFixed(2); // Lower rate for non-crop
+        setEstimatedEarnings(basicEarnings);
+      }
+
+      setAnalysisComplete(true);
+      toast.success("Analysis complete!", { id: toastId });
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to submit boundary.", { id: toastId });
+      console.error("❌ Analysis error:", err);
+      toast.error(err.response?.data?.message || "Failed to analyze.", { id: toastId });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleCarbonCreditsSubmit = () => {
+    if (!user) {
+      // Store current analysis data in sessionStorage before redirecting
+      const analysisData = {
+        area: drawnGeoJSON ? (turfArea(drawnGeoJSON) / 10000).toFixed(2) : null,
+        ndvi,
+        awb,
+        carbonCredits,
+        carbonEmission,
+        estimatedEarnings,
+        landCoverType,
+        detectedCrops,
+      };
+
+      sessionStorage.setItem("pendingCarbonCredits", JSON.stringify(analysisData));
+      toast.info("Please login to submit carbon credits");
+      navigate("/login");
+      return;
+    }
+
+    toast.success("Carbon credits submitted successfully!");
+    // Add your carbon credits processing logic here
+    navigate("/dashboard"); // or wherever you want to redirect after submission
+  };
+
+  const resetBoundary = () => {
+    const layers = mapInstance?.pm.getGeomanLayers() || [];
+    layers.forEach((l) => mapInstance.removeLayer(l));
+
+    setDrawnGeoJSON(null);
+    setCentroid(null);
+    setNdvi(null);
+    setAwb(null);
+    setEstimatedEarnings(null);
+    setCarbonCredits(null);
+    setCarbonEmission(null);
+    setLandCoverType(null);
+    setDetectedCrops([]);
+    setAnalysisComplete(false);
+
+    mapInstance?.pm.enableDraw("Polygon");
+    toast.info("Boundary reset.");
+  };
+
   if (loading) return <div>Loading...</div>;
   if (!user) return <Navigate to="/login" replace />;
+
+  const areaHectares = drawnGeoJSON ? (turfArea(drawnGeoJSON) / 10000).toFixed(2) : null;
 
   return (
     <>
@@ -172,9 +271,10 @@ export default function EstimateEarningsPage() {
       <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         <Card>
           <CardHeader>
-            <CardTitle>Estimate Earnings from Land</CardTitle>
+            <CardTitle>Carbon Credits & Earnings Estimator</CardTitle>
             <CardDescription>
-              Draw your land boundary to get NDVI and estimated earnings.
+              Draw your land boundary to analyze crops, calculate carbon credits, and estimate
+              potential earnings.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -192,48 +292,235 @@ export default function EstimateEarningsPage() {
               </MapContainer>
             </div>
 
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Analysis Results */}
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-5 gap-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Polygon Area (ha)</CardTitle>
+                  <CardTitle className="text-sm">Area (ha)</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  {drawnGeoJSON ? (turfArea(drawnGeoJSON) / 10000).toFixed(2) : "-"}
+                <CardContent className="pt-2">
+                  <div className="text-lg font-bold">{areaHectares || "-"}</div>
                 </CardContent>
               </Card>
+
               <Card>
                 <CardHeader>
-                  <CardTitle>NDVI</CardTitle>
+                  <CardTitle className="text-sm">NDVI</CardTitle>
                 </CardHeader>
-                <CardContent>{ndvi !== null ? ndvi : "-"}</CardContent>
+                <CardContent className="pt-2">
+                  <div className="text-lg font-bold">{ndvi !== null ? ndvi.toFixed(3) : "-"}</div>
+                </CardContent>
               </Card>
+
               <Card>
                 <CardHeader>
-                  <CardTitle>AWB</CardTitle>
+                  <CardTitle className="text-sm">Carbon Emission (tCO₂)</CardTitle>
                 </CardHeader>
-                <CardContent>{awb !== null ? awb : "-"}</CardContent>
+                <CardContent className="pt-2">
+                  <div className="text-lg font-bold">{carbonEmission || "-"}</div>
+                </CardContent>
               </Card>
-              <Card>
+
+              <Card className="border-green-200 dark:border-green-800">
                 <CardHeader>
-                  <CardTitle>Estimated Earnings</CardTitle>
+                  <CardTitle className="text-sm text-green-700 dark:text-green-300">
+                    Carbon Credits
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  {estimatedEarnings !== null ? `₹${estimatedEarnings}` : "-"}
+                <CardContent className="pt-2">
+                  <div className="text-lg font-bold text-green-600">{carbonCredits || "-"}</div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-blue-200 dark:border-blue-800">
+                <CardHeader>
+                  <CardTitle className="text-sm text-blue-700 dark:text-blue-300">
+                    Estimated Earnings
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-2">
+                  <div className="text-lg font-bold text-blue-600">
+                    {estimatedEarnings ? `₹${estimatedEarnings}` : "-"}
+                  </div>
                 </CardContent>
               </Card>
             </div>
 
-            <div className="mt-6 flex justify-end space-x-4">
-              {drawnGeoJSON && (
-                <Button onClick={handleSubmit} disabled={isSubmitting}>
-                  {isSubmitting ? "Submitting..." : "Submit Boundary"}
-                </Button>
-              )}
-              {estimatedEarnings !== null && (
-                <Button variant="default" onClick={() => navigate("/start-earning")}>
-                  Start Earning
-                </Button>
-              )}
+            {/* Land Cover Information */}
+            {landCoverType && (
+              <div className="mt-6">
+                <Card className="border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950">
+                  <CardHeader>
+                    <CardTitle className="text-orange-800 dark:text-orange-200">
+                      🌍 Land Cover Analysis
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-sm">
+                      <strong>Detected Land Cover:</strong> {landCoverType}
+                    </div>
+                    {detectedCrops.length > 0 && (
+                      <div className="mt-2 text-sm">
+                        <strong>Matching Crops:</strong>{" "}
+                        {detectedCrops.map((crop) => crop.crop).join(", ")}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Detailed Crop Information */}
+            {detectedCrops.length > 0 && (
+              <div className="mt-6">
+                <h3 className="font-semibold mb-3">🌾 Detailed Crop Analysis</h3>
+                <div className="space-y-3">
+                  {detectedCrops.map((crop, index) => (
+                    <Card key={index} className="border-green-200 dark:border-green-800">
+                      <CardContent className="pt-4">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <strong>Crop:</strong> {crop.crop}
+                          </div>
+                          <div>
+                            <strong>Region:</strong> {crop.region}
+                          </div>
+                          <div>
+                            <strong>AWB:</strong> {crop.awb?.toFixed(3)}
+                          </div>
+                          <div>
+                            <strong>Model:</strong> a={crop.a}, b={crop.b}
+                          </div>
+                        </div>
+                        {crop.matchType && (
+                          <div className="mt-2">
+                            <span
+                              className={`px-2 py-1 rounded text-xs ${
+                                crop.matchType === "exact"
+                                  ? "bg-green-200 dark:bg-green-700 text-green-800 dark:text-green-200"
+                                  : "bg-blue-200 dark:bg-blue-700 text-blue-800 dark:text-blue-200"
+                              }`}
+                            >
+                              {crop.matchType} match
+                            </span>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* No crops detected message */}
+            {analysisComplete && detectedCrops.length === 0 && landCoverType && (
+              <div className="mt-6">
+                <Card className="border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-950">
+                  <CardContent className="pt-4">
+                    <div className="font-medium text-yellow-800 dark:text-yellow-200">
+                      No Specific Crop Models Found
+                    </div>
+                    <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+                      Land cover "{landCoverType}" detected, but no matching crop models in
+                      database. Basic carbon credits calculated using general vegetation parameters.
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Carbon Credits Summary Card */}
+            {analysisComplete && carbonCredits && (
+              <div className="mt-6">
+                <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950">
+                  <CardHeader>
+                    <CardTitle className="text-green-800 dark:text-green-200">
+                      💰 Carbon Credits Summary
+                    </CardTitle>
+                    <CardDescription className="text-green-700 dark:text-green-300">
+                      Your potential carbon credits and earnings
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-green-600">{areaHectares}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">Hectares</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-green-600">
+                          {carbonEmission || carbonCredits}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          {carbonEmission ? "tCO₂ Emission" : "Credits"}
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-green-600">{carbonCredits}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          Carbon Credits
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-blue-600">₹{estimatedEarnings}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          Potential Earnings
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border mb-4">
+                      <h4 className="font-semibold mb-2">Calculation Details:</h4>
+                      <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                        <li>• Area: {areaHectares} hectares</li>
+                        <li>• NDVI: {ndvi?.toFixed(3)} (vegetation health)</li>
+                        {awb && <li>• AWB: {awb.toFixed(3)} (above-ground biomass)</li>}
+                        <li>
+                          • Credits rate: {detectedCrops.length > 0 ? "₹50" : "₹30"} per credit
+                        </li>
+                        <li>• Land type: {landCoverType}</li>
+                      </ul>
+                    </div>
+
+                    <Button
+                      onClick={handleCarbonCreditsSubmit}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white"
+                      size="lg"
+                    >
+                      🌱 Submit for Carbon Credits Registration
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="mt-6 flex justify-between gap-4">
+              <Button variant="outline" onClick={resetBoundary} disabled={isSubmitting}>
+                Reset Boundary
+              </Button>
+
+              <div className="flex gap-2">
+                {drawnGeoJSON && !analysisComplete && (
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {isSubmitting ? "Analyzing..." : "Analyze Land"}
+                  </Button>
+                )}
+
+                {analysisComplete && estimatedEarnings && (
+                  <Button
+                    onClick={() => navigate("/start-earning")}
+                    variant="default"
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    Start Earning Now
+                  </Button>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
