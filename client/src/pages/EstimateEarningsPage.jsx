@@ -132,6 +132,10 @@ export default function EstimateEarningsPage() {
         geojson: drawnGeoJSON,
         centroid: { type: "Point", coordinates: centroid },
       });
+      const res1 = await axiosInstance.post("/regions/ndvi", {
+        geojson: drawnGeoJSON,
+      });
+      console.log(res1);
 
       const receivedNdvi = res.data?.data?.ndvi || 0;
       const receivedAwb = res.data?.data?.awb || 0;

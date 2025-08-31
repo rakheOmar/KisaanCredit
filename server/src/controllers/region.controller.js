@@ -98,3 +98,37 @@ export const createRegion = async (req, res, next) => {
     next(err);
   }
 };
+
+export const getNdviDataForPolygon = asyncHandler(async (req, res) => {
+  let geojson = req.body.geojson;
+
+  if (!geojson) {
+    throw new ApiError("A valid GeoJSON object is required in the request body", 400);
+  }
+
+  // If geojson has a 'geometry' property, use it
+  if (geojson.geometry) {
+    geojson = geojson.geometry;
+  }
+
+  if (geojson.type !== "Polygon" || !geojson.coordinates) {
+    throw new ApiError("A valid GeoJSON Polygon is required", 400);
+  }
+
+  const searchResults = await searchDataForPolygon(geojson.coordinates);
+
+  if (!searchResults || !searchResults.features) {
+    throw new ApiError(
+      "Failed to retrieve NDVI data or no data was found for the given polygon.",
+      404
+    );
+  }
+
+  res.status(200).json(
+    new ApiResponse(200, "NDVI data products retrieved successfully", {
+      context: searchResults.context,
+      features: searchResults.features,
+      links: searchResults.links,
+    })
+  );
+});

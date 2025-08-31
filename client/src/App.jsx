@@ -24,6 +24,7 @@ import ProjectManagersDashboard from "@/pages/ProjectManagersDashboard";
 import ProjectDetailsPage from "@/pages/ProjectDetailsPage";
 import EstimateEarningsPage from "@/pages/EstimateEarningsPage";
 import StartEarningPage from "@/pages/StartEarningPage";
+import LogsPage from "@/pages/LogsPage";
 
 const hiddenLayoutRoutes = ["/login", "/signup", "/dashboard"];
 
@@ -68,6 +69,7 @@ function App() {
           <Route path="/dashboard-project/create-project" element={<CreateProjectPage />} />
           <Route path="/estimate-earnings" element={<EstimateEarningsPage />} />
           <Route path="/start-earning" element={<StartEarningPage />} />
+          <Route path="/logs/:farmerId" element={<LogsPage />} />
         </Routes>
       </Layout>
     </Router>
