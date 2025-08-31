@@ -1,18 +1,29 @@
 import 'package:flutter/material.dart';
-import './pages/carbonCalculator.dart'; // Import your CarbonCalculator page here
+import './pages/carbonCalculator.dart';
+import './pages/signup_page.dart';
+import './pages/login_page.dart';
 
 void main() {
   runApp(MyApp());
 }
 
+// ---------------- Main App ----------------
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'MRV Platform',
-      theme: ThemeData(primarySwatch: Colors.green, fontFamily: 'Inter'),
+      title: 'Tributum',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+        fontFamily: 'Inter',
+        useMaterial3: true,
+      ),
       home: LandingPage(),
-      routes: {'/carbon-calculator': (context) => CarbonCalculatorPage()},
+      routes: {
+        '/carbon-calculator': (context) => CarbonCalculatorPage(),
+        '/signup': (context) => SignupPage(),
+        '/login': (context) => LoginPage(),
+      },
       debugShowCheckedModeBanner: false,
     );
   }
@@ -25,6 +36,7 @@ class LandingPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: CustomAppBar(),
+      drawer: CustomDrawer(),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -49,9 +61,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDesktop = MediaQuery.of(context).size.width > 850;
+
     return AppBar(
-      backgroundColor: Colors.white.withOpacity(0.9),
+      backgroundColor: Colors.white.withOpacity(0.95),
       elevation: 1,
+      titleSpacing: 20,
       title: Row(
         children: [
           Container(
@@ -60,58 +75,159 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               color: Colors.green[600],
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(Icons.bolt, color: Colors.white, size: 24),
+            child: Icon(Icons.bolt, color: Colors.white, size: 22),
           ),
-          SizedBox(width: 12),
+          SizedBox(width: 10),
           Text(
-            'MRV Platform',
+            'Tributum ',
             style: TextStyle(
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w700,
               color: Color(0xFF1F2937),
               fontSize: 20,
+              letterSpacing: -0.5,
             ),
           ),
         ],
       ),
-      actions: [
-        if (MediaQuery.of(context).size.width > 850) ...[
-          TextButton(
-            onPressed: () {},
-            child: Text('Features', style: TextStyle(color: Color(0xFF4B5563))),
-          ),
-          TextButton(
-            onPressed: () {},
-            child: Text(
-              'How It Works',
-              style: TextStyle(color: Color(0xFF4B5563)),
-            ),
-          ),
-          TextButton(
-            onPressed: () {},
-            child: Text('Benefits', style: TextStyle(color: Color(0xFF4B5563))),
-          ),
-          SizedBox(width: 20),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/carbon-calculator');
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green[600],
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+      actions: isDesktop
+          ? [
+              _NavButton(label: 'Features', onTap: () {}),
+              _NavButton(label: 'How It Works', onTap: () {}),
+              _NavButton(label: 'Benefits', onTap: () {}),
+              SizedBox(width: 12),
+              TextButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/login');
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Color(0xFF374151),
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  textStyle: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                child: Text("Login"),
               ),
-            ),
-            child: Text('Get Started'),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/signup');
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green[600],
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  textStyle: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text("Sign Up"),
+              ),
+              SizedBox(width: 20),
+            ]
+          : [
+              Builder(
+                builder: (context) => IconButton(
+                  icon: Icon(Icons.menu, color: Color(0xFF1F2937)),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                ),
+              ),
+            ],
+    );
+  }
+}
+
+// ---------------- Drawer ----------------
+class CustomDrawer extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      backgroundColor: Colors.white,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.green[600],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.bolt, color: Colors.white, size: 22),
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    "MRV Platform",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                ],
+              ),
+              Divider(height: 30),
+              ListTile(title: Text("Features"), onTap: () {}),
+              ListTile(title: Text("How It Works"), onTap: () {}),
+              ListTile(title: Text("Benefits"), onTap: () {}),
+              Spacer(),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/login');
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[100],
+                  foregroundColor: Color(0xFF374151),
+                  minimumSize: Size(double.infinity, 48),
+                ),
+                child: Text("Login"),
+              ),
+              SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/signup');
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green[600],
+                  foregroundColor: Colors.white,
+                  minimumSize: Size(double.infinity, 48),
+                ),
+                child: Text("Sign Up"),
+              ),
+            ],
           ),
-          SizedBox(width: 20),
-        ],
-        if (MediaQuery.of(context).size.width <= 850)
-          IconButton(
-            icon: Icon(Icons.menu, color: Color(0xFF1F2937)),
-            onPressed: () {},
-          ),
-      ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------- Nav Button ----------------
+class _NavButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _NavButton({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: onTap,
+      style: TextButton.styleFrom(
+        foregroundColor: Color(0xFF4B5563),
+        textStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+        padding: EdgeInsets.symmetric(horizontal: 16),
+      ),
+      child: Text(label),
     );
   }
 }
@@ -126,17 +242,17 @@ class HeroSection extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Sustainable Agriculture,\nVerified Carbon Credits.',
+            "Measure, Report, and Verify Carbon Impact",
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 48,
+              fontSize: 32,
               fontWeight: FontWeight.bold,
               color: Color(0xFF1F2937),
             ),
           ),
-          SizedBox(height: 24),
+          SizedBox(height: 20),
           Text(
-            'Our platform integrates cutting-edge technology to provide end-to-end monitoring, reporting, and verification of carbon credits from farm to market.',
+            "A modern MRV platform to track emissions and unlock climate finance.",
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 18, color: Color(0xFF4B5563)),
           ),
@@ -152,7 +268,7 @@ class HeroSection extends StatelessWidget {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green[600],
-                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 18),
                   textStyle: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -161,12 +277,12 @@ class HeroSection extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: Text('Access Platform Now'),
+                child: Text("Access Platform Now"),
               ),
               OutlinedButton(
                 onPressed: () {},
                 style: OutlinedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 18),
                   textStyle: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -177,7 +293,7 @@ class HeroSection extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  'Learn More',
+                  "Learn More",
                   style: TextStyle(color: Colors.grey[700]),
                 ),
               ),
@@ -198,8 +314,8 @@ class StatsSection extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Our Impact',
-            style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
+            "Our Impact",
+            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 40),
           Wrap(
@@ -247,7 +363,7 @@ class StatItem extends StatelessWidget {
         Text(
           value,
           style: TextStyle(
-            fontSize: 36,
+            fontSize: 28,
             fontWeight: FontWeight.bold,
             color: Color(0xFF1F2937),
           ),
@@ -269,12 +385,12 @@ class FeaturesSection extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Complete MRV Solution',
-            style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
+            "Complete MRV Solution",
+            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 16),
           Text(
-            'Our platform integrates technology to provide end-to-end monitoring, reporting, and verification of carbon credits from farm to market.',
+            "Our platform integrates technology to provide end-to-end monitoring, reporting, and verification of carbon credits.",
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 18, color: Color(0xFF4B5563)),
           ),
@@ -335,7 +451,7 @@ class FeatureCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 300,
+      width: 280,
       padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -346,7 +462,6 @@ class FeatureCard extends StatelessWidget {
             color: Colors.grey.withOpacity(0.1),
             spreadRadius: 2,
             blurRadius: 10,
-            offset: Offset(0, 5),
           ),
         ],
       ),
@@ -386,12 +501,12 @@ class HowItWorksSection extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'How It Works',
-            style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
+            "How It Works",
+            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 16),
           Text(
-            'From data collection to payment, our streamlined process makes carbon credit generation simple and transparent.',
+            "From data collection to payment, our streamlined process makes carbon credit generation simple and transparent.",
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 18, color: Color(0xFF4B5563)),
           ),
@@ -450,7 +565,7 @@ class StepItem extends StatelessWidget {
         CircleAvatar(
           radius: 30,
           backgroundColor: Colors.green[600],
-          child: Icon(icon, color: Colors.white, size: 30),
+          child: Icon(icon, color: Colors.white, size: 28),
         ),
         SizedBox(height: 16),
         Text(
@@ -478,8 +593,8 @@ class BenefitsSection extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Why Choose Us',
-            style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
+            "Why Choose Us",
+            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 48),
           Wrap(
@@ -538,7 +653,6 @@ class BenefitCard extends StatelessWidget {
             color: Colors.grey.withOpacity(0.1),
             spreadRadius: 2,
             blurRadius: 10,
-            offset: Offset(0, 5),
           ),
         ],
       ),
@@ -573,16 +687,16 @@ class CtaSection extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Ready to Start?',
+            "Ready to Start?",
             style: TextStyle(
-              fontSize: 36,
+              fontSize: 32,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
           ),
           SizedBox(height: 16),
           Text(
-            'Join thousands of farmers generating verified carbon credits with our platform.',
+            "Join thousands of farmers generating verified carbon credits with our platform.",
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 18, color: Colors.white70),
           ),
@@ -600,7 +714,7 @@ class CtaSection extends StatelessWidget {
               ),
             ),
             child: Text(
-              'Get Started Now',
+              "Access Platform Now",
               style: TextStyle(color: Colors.green[600]),
             ),
           ),
@@ -615,33 +729,21 @@ class FooterSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.grey[100],
-      padding: EdgeInsets.symmetric(vertical: 60, horizontal: 24),
+      color: Colors.grey[900],
+      padding: EdgeInsets.symmetric(vertical: 40, horizontal: 24),
       child: Column(
         children: [
           Text(
-            'MRV Platform © 2025',
-            style: TextStyle(color: Colors.grey[700]),
+            "© 2025 MRV Platform. All rights reserved.",
+            style: TextStyle(color: Colors.white70, fontSize: 14),
           ),
           SizedBox(height: 16),
           Wrap(
-            spacing: 16,
-            alignment: WrapAlignment.center,
+            spacing: 24,
             children: [
-              TextButton(
-                onPressed: () {},
-                child: Text(
-                  'Privacy Policy',
-                  style: TextStyle(color: Colors.grey[700]),
-                ),
-              ),
-              TextButton(
-                onPressed: () {},
-                child: Text(
-                  'Terms of Service',
-                  style: TextStyle(color: Colors.grey[700]),
-                ),
-              ),
+              Text("Privacy Policy", style: TextStyle(color: Colors.white70)),
+              Text("Terms of Service", style: TextStyle(color: Colors.white70)),
+              Text("Contact", style: TextStyle(color: Colors.white70)),
             ],
           ),
         ],

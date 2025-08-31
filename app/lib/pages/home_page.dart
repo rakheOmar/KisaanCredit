@@ -82,7 +82,7 @@ class _HomePageState extends State<HomePage> {
   String? _userAvatarUrl;
 
   Map<String, int> _environmentalImpact = {};
-  List<Map<String, String>> _recentActivities = [];
+  List<Map<String, String>> _dailyActivities = [];
 
   final Dio _dio = Dio();
 
@@ -108,6 +108,9 @@ class _HomePageState extends State<HomePage> {
         "http://10.0.2.2:8000/api/v1/users/me",
       );
 
+      print("User response status: ${userResponse.statusCode}");
+      print("User response data: ${userResponse.data}");
+
       if (userResponse.statusCode == 200) {
         final responseData = userResponse.data['data'];
         print("User data fetched: $responseData");
@@ -131,7 +134,7 @@ class _HomePageState extends State<HomePage> {
         });
       }
 
-      // Fetch recent daily logs
+      // Fetch recent daily logs only
       await _fetchDailyLogs();
     } catch (e) {
       print("Error fetching dashboard: $e");
@@ -140,42 +143,44 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // ------------------- DAILY LOGS -------------------
   Future<void> _fetchDailyLogs() async {
     try {
-      print("Fetching recent daily logs...");
+      print("Fetching daily logs...");
       final response = await _dio.get(
-        "http://10.0.2.2:8000/api/v1/farmers/daily-log",
+        "http://10.0.2.2:8000/api/v1/farmers/daily-logs/",
       );
-
-      print("Daily logs response: ${response.data}");
+      print("Daily logs response status: ${response.statusCode}");
+      print("Daily logs response data: ${response.data}");
 
       if (response.statusCode == 200 && response.data['data'] != null) {
         final logs = response.data['data'] as List;
-        print("Parsed logs list length: ${logs.length}");
+        print("Fetched ${logs.length} daily logs");
 
         setState(() {
-          _recentActivities = logs.map<Map<String, String>>((log) {
+          _dailyActivities = logs.map<Map<String, String>>((log) {
             final title =
                 log['title'] ??
                 "Water Status: ${log['waterStatus'] ?? 'Unknown'}";
             final date = log['date'] != null
-                ? log['date'].toString().split("T")[0]
+                ? DateTime.parse(log['date']).toLocal().toString().split(" ")[0]
                 : "Unknown date";
             final status = log['status'] ?? "Pending";
 
-            print("Mapping log -> title: $title, date: $date, status: $status");
+            print("Daily log - title: $title, date: $date, status: $status");
 
             return {'title': title, 'date': date, 'status': status};
           }).toList();
         });
-
-        print("Updated _recentActivities: $_recentActivities");
+      } else {
+        print("No daily logs found in response.");
       }
     } catch (e) {
       print("Error fetching daily logs: $e");
     }
   }
 
+  // ------------------- LOGOUT -------------------
   Future<void> _logout() async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -247,7 +252,7 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(height: 24),
                     _buildEnvironmentalImpactCard(),
                     const SizedBox(height: 24),
-                    _buildRecentActivitiesCard(),
+                    _buildRecentActivitiesCard(), // Daily logs only
                   ],
                 ),
               ),
@@ -406,41 +411,31 @@ class _HomePageState extends State<HomePage> {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.calendar_today_outlined, color: Colors.blue[700]),
-                const SizedBox(width: 8),
-                Text(
-                  t('recent_activities'),
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            ..._recentActivities.map((activity) {
-              return _ActivityTile(
-                title: activity['title'] ?? "",
-                date: activity['date'] ?? "",
-                status: activity['status'] ?? "",
-              );
-            }).toList(),
-          ],
-        ),
-      ),
+      child: Container(height: 300, child: _activitiesList(_dailyActivities)),
+    );
+  }
+
+  Widget _activitiesList(List<Map<String, String>> activities) {
+    if (activities.isEmpty) {
+      return Center(
+        child: Text('No logs found', style: TextStyle(color: Colors.grey[600])),
+      );
+    }
+    return ListView.builder(
+      itemCount: activities.length,
+      itemBuilder: (context, index) {
+        final activity = activities[index];
+        return _ActivityTile(
+          title: activity['title'] ?? "",
+          date: activity['date'] ?? "",
+          status: activity['status'] ?? "",
+        );
+      },
     );
   }
 }
 
 // ------------------- Helper Widgets -------------------
-
 class _InfoCard extends StatelessWidget {
   final String title;
   final String value;
@@ -492,15 +487,7 @@ class _InfoCard extends StatelessWidget {
                 if (progressValue != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: LinearProgressIndicator(
-                        value: progressValue!,
-                        minHeight: 6,
-                        backgroundColor: Colors.grey[200],
-                        color: Colors.black87,
-                      ),
-                    ),
+                    child: LinearProgressIndicator(value: progressValue),
                   ),
               ],
             ),
@@ -520,30 +507,20 @@ class _ImpactRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(label, style: const TextStyle(fontSize: 14)),
-              Text(
-                '$percentage%',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
+          Expanded(flex: 3, child: Text(label)),
+          Expanded(
+            flex: 7,
             child: LinearProgressIndicator(
-              value: percentage / 100.0,
-              minHeight: 8,
+              value: percentage / 100,
               backgroundColor: Colors.grey[200],
-              color: Colors.black87,
+              color: Colors.green,
             ),
           ),
+          const SizedBox(width: 8),
+          Text("$percentage%"),
         ],
       ),
     );
@@ -564,48 +541,13 @@ class _ActivityTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: Text(date, style: TextStyle(color: Colors.grey[600])),
-      trailing: _StatusChip(status: status),
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  final String status;
-  const _StatusChip({required this.status});
-
-  Color _getColor() {
-    switch (status.toLowerCase()) {
-      case 'verified':
-        return Colors.green;
-      case 'pending':
-        return Colors.orange;
-      case 'completed':
-        return Colors.blue;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _getColor();
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(12),
+      leading: Icon(
+        Icons.check_circle_outline,
+        color: status.toLowerCase() == 'completed' ? Colors.green : Colors.grey,
       ),
-      child: Text(
-        status,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
-      ),
+      title: Text(title),
+      subtitle: Text(date),
+      trailing: Text(status),
     );
   }
 }

@@ -4,8 +4,8 @@ import { ApiResponse } from "../utils/apiResponse.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { DailyLog } from "../models/dailyLog.model.js";
+import { SeasonalLog } from "../models/seasonalLog.model.js";
 
-// Update farmer land plot
 const updateFarmerLandPlot = asyncHandler(async (req, res) => {
   const { geoJson, areaInHectares } = req.body;
 
@@ -37,15 +37,13 @@ const updateFarmerLandPlot = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, "Farmer land plot updated successfully", user));
 });
 
-// Create a daily log
 const createDailyLog = asyncHandler(async (req, res) => {
-  const { waterStatus, fertilizerType, fertilizerAmount } = req.body;
+  const { waterStatus, fertilizerType, fertilizerAmount, seasonalLogId } = req.body;
 
   if (!req.user?._id) {
     throw new ApiError(401, "Unauthorized");
   }
 
-  // Handle multiple image uploads
   let imageUrls = [];
   if (req.files && req.files.length > 0) {
     for (const file of req.files) {
@@ -55,37 +53,61 @@ const createDailyLog = asyncHandler(async (req, res) => {
   }
 
   const dailyLog = new DailyLog({
-    seasonalLog: null, // or link to seasonal log if needed
+    farmerId: req.user._id,
+    seasonalLog: seasonalLogId || null,
     date: new Date(),
-    waterStatus: waterStatus || "Moist",
+    waterStatus: waterStatus,
     fertilizerApplication: {
-      type: fertilizerType || "Urea",
+      fertilizerType: fertilizerType,
       amount: fertilizerAmount || 0,
     },
-    image: imageUrls, // save all uploaded image URLs
+    image: imageUrls,
   });
 
   await dailyLog.save();
 
   return res.status(200).json(new ApiResponse(200, "Daily log created successfully", dailyLog));
 });
-
-// Fetch daily logs for activities
 const fetchDailyLogs = asyncHandler(async (req, res) => {
+  // The middleware has already populated req.user, so this check is valid.
   if (!req.user?._id) {
     throw new ApiError(401, "Unauthorized");
   }
 
-  const logs = await DailyLog.find({}).sort({ date: -1 }).lean();
+  // Find all logs for the user, sorted by most recent
+  const logs = await DailyLog.find({ farmerId: req.user._id }).sort({ date: -1 }).lean();
 
-  // Map to activity-friendly format
-  const activities = logs.map((log) => ({
-    title: `Water Status: ${log.waterStatus}`,
-    date: log.date.toISOString().split("T")[0],
-    status: "Pending", // or customize based on verification
-  }));
+  // Return the complete log objects directly
+  return res.status(200).json(new ApiResponse(200, "Daily logs fetched successfully", logs));
+});
+const getSeasonalLogs = asyncHandler(async (req, res) => {
+  const { farmerId } = req.params;
 
-  return res.status(200).json(new ApiResponse(200, "Daily logs fetched successfully", activities));
+  const seasonalLogs = await SeasonalLog.find({ farmer: farmerId })
+    .populate("farmer", "-password -refreshToken")
+    .populate("carbonProject");
+
+  if (!seasonalLogs || seasonalLogs.length === 0) {
+    return res.status(404).json(new ApiResponse(404, "No seasonal logs found", null));
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Seasonal logs fetched successfully", seasonalLogs));
 });
 
-export { updateFarmerLandPlot, createDailyLog, fetchDailyLogs };
+const getDailyLogs = asyncHandler(async (req, res) => {
+  const { seasonalLogId } = req.params;
+
+  const dailyLogs = await DailyLog.find({ seasonalLog: seasonalLogId })
+    .populate("seasonalLog")
+    .populate("seasonalLog.farmer", "-password -refreshToken");
+
+  if (!dailyLogs || dailyLogs.length === 0) {
+    return res.status(404).json(new ApiResponse(404, "No daily logs found", null));
+  }
+
+  return res.status(200).json(new ApiResponse(200, "Daily logs fetched successfully", dailyLogs));
+});
+
+export { updateFarmerLandPlot, createDailyLog, fetchDailyLogs, getSeasonalLogs, getDailyLogs };

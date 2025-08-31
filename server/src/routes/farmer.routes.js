@@ -1,22 +1,22 @@
-import { Router } from "express";
+import express from "express";
 import {
   updateFarmerLandPlot,
   createDailyLog,
   fetchDailyLogs,
+  getSeasonalLogs,
+  getDailyLogs,
 } from "../controllers/farmer.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
-import { upload } from "../middlewares/multer.middleware.js"; // for handling images
+import multer from "multer";
 
-const router = Router();
+const router = express.Router();
+const upload = multer({ dest: "uploads/" });
 
-// -------------------- Land Routes --------------------
-router.patch("/land", verifyJWT, updateFarmerLandPlot);
-
-// -------------------- Daily Log Routes --------------------
-// Use upload.array("images") to handle multiple images from frontend
+router.put("/land-plot", verifyJWT, updateFarmerLandPlot);
 router.post("/daily-log", verifyJWT, upload.array("images", 5), createDailyLog);
-// "images" is the field name in the form-data, 5 is max files
-
-router.get("/daily-log", verifyJWT, fetchDailyLogs);
+router.get("/daily-logs", verifyJWT, fetchDailyLogs);
+router.get("/seasonal-logs/:farmerId", verifyJWT, getSeasonalLogs);
+router.get("/daily-logs/:seasonalLogId", verifyJWT, getDailyLogs);
+router.get("/farmer-daily-logs/:farmerId", verifyJWT, getDailyLogs);
 
 export default router;

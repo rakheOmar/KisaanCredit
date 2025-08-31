@@ -1,61 +1,7 @@
 import { ApiResponse } from "../utils/apiResponse.js";
 import { ApiError } from "../utils/apiError.js";
-import * as GeoTIFF from "geotiff";
-import path from "path";
-import fs from "fs";
 import CropModel from "../models/crop.model.js";
-import { getLandCoverFromBhuvan } from "../services/bhuvanService.js";
-
-const tifPath = path.join(process.cwd(), "data", "dec.tif");
-
-const getNDVIValue = async (lon, lat) => {
-  if (!fs.existsSync(tifPath)) {
-    throw new ApiError("NDVI raster file not found on server", 500);
-  }
-
-  const fileBuffer = fs.readFileSync(tifPath);
-  const arrayBuffer = fileBuffer.buffer.slice(
-    fileBuffer.byteOffset,
-    fileBuffer.byteOffset + fileBuffer.byteLength
-  );
-
-  const tiff = await GeoTIFF.fromArrayBuffer(arrayBuffer);
-  const image = await tiff.getImage();
-
-  const fileDirectory = image.getFileDirectory();
-  const noDataValue = fileDirectory.GDAL_NODATA ? parseFloat(fileDirectory.GDAL_NODATA) : null;
-  const sampleFormat = fileDirectory.SampleFormat ? fileDirectory.SampleFormat[0] : 1;
-
-  const width = image.getWidth();
-  const height = image.getHeight();
-  const bbox = image.getBoundingBox();
-  const rasters = await image.readRasters({ interleave: true });
-
-  const xRes = (bbox[2] - bbox[0]) / width;
-  const yRes = (bbox[3] - bbox[1]) / height;
-
-  const xPixel = Math.floor((lon - bbox[0]) / xRes);
-  const yPixel = Math.floor((bbox[3] - lat) / yRes);
-
-  if (xPixel < 0 || yPixel < 0 || xPixel >= width || yPixel >= height) {
-    throw new ApiError("Centroid is out of the raster's bounds", 400);
-  }
-
-  const pixelValue = rasters[yPixel * width + xPixel];
-
-  if (noDataValue !== null && pixelValue === noDataValue) {
-    throw new ApiError("Coordinates point to an area with no data", 400);
-  }
-
-  let ndvi = pixelValue / 200.0;
-
-  if (sampleFormat === 3) {
-    ndvi = pixelValue;
-  }
-
-  console.log(`Raw pixel value: ${pixelValue}, Computed NDVI: ${ndvi}`);
-  return ndvi;
-};
+import { getLandCoverFromBhuvan, getNDVIForPolygon } from "../services/bhuvanService.js";
 
 export const createRegion = async (req, res, next) => {
   try {
@@ -66,40 +12,50 @@ export const createRegion = async (req, res, next) => {
 
     const [lon, lat] = centroid.coordinates;
 
-    const landCoverType = await getLandCoverFromBhuvan(lat, lon);
-    const ndviValue = await getNDVIValue(lon, lat);
+    let landCoverType;
+    try {
+      landCoverType = await getLandCoverFromBhuvan(lat, lon);
+    } catch (bhuvanError) {
+      console.error(
+        "Bhuvan LULC service failed. Defaulting to 'Generic'. Error:",
+        bhuvanError.message
+      );
+      landCoverType = "Generic";
+    }
 
-    console.log(`Looking for model with land cover: "${landCoverType}"`);
+    let ndviData;
+    let ndviValue;
+    try {
+      ndviData = await getNDVIForPolygon(geojson.coordinates);
+      if (ndviData.averageNdvi === 0 && ndviData.metadata.status) {
+        console.error(
+          "Bhoonidhi service returned an error state. Defaulting NDVI. Status:",
+          ndviData.metadata.status
+        );
+        ndviValue = 0.4; // Default NDVI for moderate vegetation
+        ndviData.metadata.status = "Using fallback NDVI due to API error.";
+      } else {
+        ndviValue = ndviData.averageNdvi;
+      }
+    } catch (ndviError) {
+      console.error(
+        "Bhoonidhi service failed completely (e.g., timeout). Defaulting NDVI. Error:",
+        ndviError.message
+      );
+      ndviValue = 0.4; // Default NDVI for moderate vegetation
+      ndviData = { metadata: { status: "Using fallback NDVI due to network failure." } };
+    }
 
     let model = await CropModel.findOne({
-      cropName: landCoverType,
+      cropName: { $regex: new RegExp(`^${landCoverType}$`, "i") },
       region: "Maharashtra",
     });
 
-    console.log(`Maharashtra model found: ${!!model}`);
-
-    if (!model) {
-      model = await CropModel.findOne({
-        cropName: landCoverType,
-        region: "Generic",
-      });
-      console.log(`Generic model found: ${!!model}`);
-    }
-
-    if (!model) {
-      model = await CropModel.findOne({
-        cropName: { $regex: new RegExp(`^${landCoverType}$`, "i") },
-        region: "Maharashtra",
-      });
-      console.log(`Case-insensitive Maharashtra model found: ${!!model}`);
-    }
-
     if (!model) {
       model = await CropModel.findOne({
         cropName: { $regex: new RegExp(`^${landCoverType}$`, "i") },
         region: "Generic",
       });
-      console.log(`Case-insensitive Generic model found: ${!!model}`);
     }
 
     if (!model) {
@@ -107,7 +63,6 @@ export const createRegion = async (req, res, next) => {
         cropName: { $regex: new RegExp(landCoverType, "i") },
         region: "Maharashtra",
       });
-      console.log(`Partial Maharashtra model found: ${!!model}`);
     }
 
     if (!model) {
@@ -115,20 +70,10 @@ export const createRegion = async (req, res, next) => {
         cropName: { $regex: new RegExp(landCoverType, "i") },
         region: "Generic",
       });
-      console.log(`Partial Generic model found: ${!!model}`);
     }
 
     if (!model) {
-      console.log("No model found. Available crop names:");
-      const availableCrops = await CropModel.find({}, "cropName region").limit(20);
-      availableCrops.forEach((crop) => {
-        console.log(`"${crop.cropName}" (${crop.region})`);
-      });
-
-      throw new ApiError(
-        `No suitable carbon model found for land cover: "${landCoverType}". Available models logged to console.`,
-        404
-      );
+      throw new ApiError(`No suitable carbon model found for land cover: "${landCoverType}".`, 404);
     }
 
     const { a, b } = model.model;
@@ -141,10 +86,12 @@ export const createRegion = async (req, res, next) => {
         landCoverType,
         ndvi: ndviValue,
         awb: awbValue,
-        a,
-        b,
-        usedModel: model.cropName,
-        modelRegion: model.region,
+        modelParameters: { a, b },
+        usedModel: {
+          cropName: model.cropName,
+          region: model.region,
+        },
+        satelliteMetadata: ndviData.metadata,
       })
     );
   } catch (err) {
