@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import 'home_page.dart'; // <-- Replace with your actual home/dashboard page
+import 'package:shared_preferences/shared_preferences.dart';
+import 'home_page.dart'; // Replace with your actual home/dashboard page
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -26,21 +27,39 @@ class _LoginPageState extends State<LoginPage> {
       "password": _passwordController.text.trim(),
     };
 
+    print("Attempting login with: $formData");
+
     try {
       final dio = Dio();
-      final url =
-          "http://10.0.2.2:8000/api/v1/users/login"; // backend login API
+      final url = "http://10.0.2.2:8000/api/v1/users/login";
       final response = await dio.post(url, data: formData);
 
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Login successful!")));
+      print("Login response status: ${response.statusCode}");
+      print("Login response data: ${response.data}");
 
-        // Navigate to home/dashboard page
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const HomePage()),
-        );
+      if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
+        final data = response.data['data'];
+        if (data != null && data.containsKey('accessToken')) {
+          String token = data['accessToken'];
+          print("JWT token received: $token");
+
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.setString("jwt_token", token);
+          print("JWT token saved in SharedPreferences");
+
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text("Login successful!")));
+
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const HomePage()),
+          );
+        } else {
+          print("Warning: JWT token not found in response data");
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Login failed: No token received")),
+          );
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Login failed: ${response.statusCode}")),
@@ -52,10 +71,12 @@ class _LoginPageState extends State<LoginPage> {
         final data = e.response!.data as Map<String, dynamic>;
         if (data.containsKey("message")) errorMessage = data["message"];
       }
+      print("DioError during login: $e");
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(errorMessage)));
     } catch (e) {
+      print("Unexpected error during login: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Unexpected error occurred")),
       );
