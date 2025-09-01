@@ -248,6 +248,17 @@ const getCreditsSummary = asyncHandler(async (req, res) => {
   );
 });
 
+const getTopCarbonCreditUsers = asyncHandler(async (req, res) => {
+  const topUsers = await User.find()
+    .sort({ carbonCredits: -1 }) // descending order
+    .limit(10)
+    .select("username fullName avatar role carbonCredits moneyEarned");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Top 10 users by carbon credits fetched successfully", topUsers));
+});
+
 // =========================================================
 // EXPORTS
 // =========================================================
@@ -264,4 +275,5 @@ export {
   addCarbonCredits,
   redeemCarbonCredits,
   getCreditsSummary,
+  getTopCarbonCreditUsers,
 };

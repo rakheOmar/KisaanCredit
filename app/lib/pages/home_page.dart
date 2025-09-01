@@ -8,7 +8,16 @@ import '../weather_model.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 
-// Translations map with additions for CO2 savings
+Widget _getBadgeLevel(double credits) {
+  if (credits >= 10) {
+    return const Icon(Icons.military_tech, color: Colors.amber, size: 24);
+  } else if (credits >= 5) {
+    return Icon(Icons.military_tech, color: Colors.grey[400], size: 24);
+  } else {
+    return Icon(Icons.military_tech, color: Colors.brown[400], size: 24);
+  }
+}
+
 Map<String, Map<String, String>> translations = {
   'en': {
     'welcome': 'Welcome back,',
@@ -81,7 +90,6 @@ class _HomePageState extends State<HomePage> {
   String _currentLanguage = 'en';
   String t(String key) => translations[_currentLanguage]?[key] ?? key;
 
-  // State variables
   String _farmerName = "";
   String _farmName = "";
   double _farmSize = 0;
@@ -231,9 +239,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(
-        0xFFF0F2F5,
-      ), // A slightly different background
+      backgroundColor: const Color(0xFFF0F2F5),
       appBar: AppBar(
         title: const Text("Farmer Dashboard"),
         backgroundColor: Colors.white,
@@ -273,6 +279,7 @@ class _HomePageState extends State<HomePage> {
                       userAvatarUrl: _userAvatarUrl,
                       isWeatherLoading: _isWeatherLoading,
                       currentWeather: _currentWeather,
+                      carbonCredits: _carbonCredits,
                       t: t,
                     ),
                     const SizedBox(height: 16),
@@ -305,9 +312,6 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// =========================================================================
-// SECTION 1: WELCOME HEADER AND WEATHER
-// =========================================================================
 class _WelcomeAndWeatherSection extends StatelessWidget {
   final String farmerName;
   final String farmName;
@@ -315,6 +319,7 @@ class _WelcomeAndWeatherSection extends StatelessWidget {
   final String? userAvatarUrl;
   final bool isWeatherLoading;
   final Weather? currentWeather;
+  final double carbonCredits;
   final String Function(String) t;
 
   const _WelcomeAndWeatherSection({
@@ -325,6 +330,7 @@ class _WelcomeAndWeatherSection extends StatelessWidget {
     this.userAvatarUrl,
     required this.isWeatherLoading,
     this.currentWeather,
+    required this.carbonCredits,
     required this.t,
   }) : super(key: key);
 
@@ -336,14 +342,12 @@ class _WelcomeAndWeatherSection extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          // Subtle green glow for the agricultural theme
           BoxShadow(
             color: Colors.green.withOpacity(0.1),
             blurRadius: 20,
             spreadRadius: 1,
             offset: const Offset(0, 5),
           ),
-          // Standard soft black shadow for depth
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
@@ -371,17 +375,28 @@ class _WelcomeAndWeatherSection extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "${t('welcome')} $farmerName",
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            "${t('welcome')} $farmerName",
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _getBadgeLevel(carbonCredits),
+                      ],
                     ),
                     const SizedBox(height: 4),
                     Text(
                       "$farmName, $farmLocation",
                       style: const TextStyle(color: Colors.grey, fontSize: 14),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
                     ),
                   ],
                 ),
@@ -404,6 +419,7 @@ class _WelcomeAndWeatherSection extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                         color: Colors.black54,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -413,19 +429,17 @@ class _WelcomeAndWeatherSection extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                         color: Theme.of(context).primaryColor,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 )
-              : Text(t('weather_unavailable')),
+              : Text(t('weather_unavailable'), overflow: TextOverflow.ellipsis),
         ],
       ),
     );
   }
 }
 
-// =========================================================================
-// SECTION 2: CREDIT SUMMARY & ENVIRONMENTAL IMPACT
-// =========================================================================
 class _CreditSummarySection extends StatelessWidget {
   final double carbonCredits;
   final double moneyEarned;
@@ -444,7 +458,6 @@ class _CreditSummarySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1 Carbon Credit = 1 Tonne of CO2 = 1000 kg of CO2
     final double co2SavedInKg = carbonCredits * 1000;
 
     return Container(
@@ -453,14 +466,12 @@ class _CreditSummarySection extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          // Subtle green glow for the agricultural theme
           BoxShadow(
             color: Colors.green.withOpacity(0.1),
             blurRadius: 20,
             spreadRadius: 1,
             offset: const Offset(0, 5),
           ),
-          // Standard soft black shadow for depth
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
@@ -495,28 +506,31 @@ class _CreditSummarySection extends StatelessWidget {
           const SizedBox(height: 16),
           const Divider(),
           const SizedBox(height: 16),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: 2.5,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            children: [
-              _InfoTile(
-                title: t('total_credits'),
-                value: carbonCredits.toStringAsFixed(2),
-              ),
-              _InfoTile(title: t('farm_size'), value: '$farmSize ha'),
-              _InfoTile(
-                title: t('monthly_earnings'),
-                value: '₹${moneyEarned.toStringAsFixed(2)}',
-              ),
-              _InfoTile(
-                title: t('credit_score'),
-                value: carbonCredits.toStringAsFixed(2),
-              ),
-            ],
+          SizedBox(
+            height: 140,
+            child: GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              childAspectRatio: 2.5,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              children: [
+                _InfoTile(
+                  title: t('total_credits'),
+                  value: carbonCredits.toStringAsFixed(2),
+                ),
+                _InfoTile(title: t('farm_size'), value: '$farmSize ha'),
+                _InfoTile(
+                  title: t('monthly_earnings'),
+                  value: '₹${moneyEarned.toStringAsFixed(2)}',
+                ),
+                _InfoTile(
+                  title: t('credit_score'),
+                  value: carbonCredits.toStringAsFixed(2),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           if (environmentalImpact.isNotEmpty) ...[
@@ -544,9 +558,6 @@ class _CreditSummarySection extends StatelessWidget {
   }
 }
 
-// =========================================================================
-// SECTION 3: DAILY LOG / RECENT ACTIVITIES
-// =========================================================================
 class _DailyLogSection extends StatelessWidget {
   final List<Map<String, String>> dailyActivities;
   final String Function(String) t;
@@ -565,14 +576,12 @@ class _DailyLogSection extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          // Subtle green glow for the agricultural theme
           BoxShadow(
             color: Colors.green.withOpacity(0.1),
             blurRadius: 20,
             spreadRadius: 1,
             offset: const Offset(0, 5),
           ),
-          // Standard soft black shadow for depth
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
@@ -600,20 +609,34 @@ class _DailyLogSection extends StatelessWidget {
               ),
             )
           else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: dailyActivities.length,
-              separatorBuilder: (context, index) => const Divider(),
-              itemBuilder: (context, index) {
-                final e = dailyActivities[index];
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(e['title'] ?? ''),
-                  subtitle: Text(e['date'] ?? ''),
-                  trailing: Text(e['status'] ?? ''),
-                );
-              },
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.3,
+              ),
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const ClampingScrollPhysics(),
+                itemCount: dailyActivities.length,
+                separatorBuilder: (context, index) => const Divider(),
+                itemBuilder: (context, index) {
+                  final e = dailyActivities[index];
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      e['title'] ?? '',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: Text(
+                      e['date'] ?? '',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: Text(
+                      e['status'] ?? '',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                },
+              ),
             ),
         ],
       ),
@@ -621,7 +644,6 @@ class _DailyLogSection extends StatelessWidget {
   }
 }
 
-// --- HELPER WIDGET for Credit Summary ---
 class _InfoTile extends StatelessWidget {
   final String title;
   final String value;
@@ -634,11 +656,17 @@ class _InfoTile extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(title, style: const TextStyle(color: Colors.grey, fontSize: 14)),
+        Text(
+          title,
+          style: const TextStyle(color: Colors.grey, fontSize: 14),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 2,
+        ),
         const SizedBox(height: 4),
         Text(
           value,
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );

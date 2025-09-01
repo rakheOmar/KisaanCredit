@@ -12,6 +12,7 @@ import {
   addCarbonCredits,
   redeemCarbonCredits,
   getCreditsSummary,
+  getTopCarbonCreditUsers,
 } from "../controllers/user.controller.js";
 
 import { upload } from "../middlewares/multer.middleware.js";
@@ -38,5 +39,6 @@ router.get("/profile/:username", getUserProfile);
 router.post("/credits/add", verifyJWT, addCarbonCredits);
 router.post("/credits/redeem", verifyJWT, redeemCarbonCredits);
 router.get("/credits/summary", verifyJWT, getCreditsSummary);
+router.get("/credits/top", verifyJWT, getTopCarbonCreditUsers);
 
 export default router;
