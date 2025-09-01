@@ -17,12 +17,9 @@ echo.
 
 cd /d "%~dp0"
 
-start "Blockchain" cmd /k "cd /d ""%~dp0blockchain"" && npm i && npm run dev"
-
+start "Blockchain" cmd /k "cd /d ""%~dp0blockchain"" && npx hardhat node"
 start "Client" cmd /k "cd /d ""%~dp0client"" && npm i && npm run dev"
-
 start "Node Server" cmd /k "cd /d ""%~dp0server"" && npm i && npm run dev"
-
 @REM start "Flask Server" cmd /k "cd /d ""%~dp0server - flask"" && conda activate flask_env && python run.py"
 
 echo All development servers are being launched in new windows.

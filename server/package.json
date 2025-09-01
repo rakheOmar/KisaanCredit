@@ -28,16 +28,16 @@
     "geotiff": "^2.1.4-beta.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.17.1",
+    "mongoose": "^8.18.0",
     "mongoose-aggregate-paginate-v2": "^1.1.4",
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
-    "nodemailer": "^7.0.5",
+    "nodemailer": "^7.0.6",
     "pdf-lib": "^1.17.1",
     "peer": "^1.0.2",
     "proj4": "^2.19.10",
     "razorpay": "^2.9.6",
     "socket.io": "^4.8.1",
-    "twilio": "^5.8.0"
+    "twilio": "^5.8.2"
   }
 }
