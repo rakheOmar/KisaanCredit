@@ -7,15 +7,21 @@ import { toast, Toaster } from "sonner";
 import "@geoman-io/leaflet-geoman-free";
 import "@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css";
 import axiosInstance from "@/lib/axios";
+import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Leaf, LandPlot, BarChart, Coins } from "lucide-react";
-
-const useAuth = () => ({
-  user: { id: 1, name: "Demo User", token: "YOUR_AUTH_TOKEN" },
-  loading: false,
-});
+import {
+  Leaf,
+  LandPlot,
+  BarChart,
+  Coins,
+  MapPin,
+  Zap,
+  TrendingUp,
+  CheckCircle2,
+  Loader2,
+} from "lucide-react";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -57,7 +63,6 @@ export default function UnifiedCarbonEstimator() {
   const [landCoverType, setLandCoverType] = useState(null);
   const [detectedCropsData, setDetectedCropsData] = useState([]);
   const [analysisComplete, setAnalysisComplete] = useState(false);
-
   const { user, loading } = useAuth();
 
   useEffect(() => {
@@ -78,10 +83,8 @@ export default function UnifiedCarbonEstimator() {
       const centerPoint = turfCentroid(geojson);
       setDrawnGeoJSON(geojson);
       setCentroid(centerPoint.geometry.coordinates);
-
       const areaSqM = turfArea(geojson);
       setAreaHectares((areaSqM / 10000).toFixed(2));
-
       const bounds = L.geoJSON(geojson).getBounds();
       mapInstance.fitBounds(bounds, { padding: [20, 20] });
     },
@@ -90,7 +93,6 @@ export default function UnifiedCarbonEstimator() {
 
   useEffect(() => {
     if (!mapInstance) return;
-
     mapInstance.pm.addControls({
       position: "topright",
       drawCircle: false,
@@ -156,24 +158,13 @@ export default function UnifiedCarbonEstimator() {
       toast.error("Please draw a boundary first.");
       return;
     }
-
     setIsSubmitting(true);
     const toastId = toast.loading("Analyzing your land data...");
-
     try {
-      const res = await axiosInstance.post(
-        "/regions",
-        {
-          geojson: drawnGeoJSON,
-          centroid: { type: "Point", coordinates: centroid },
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${user?.token}`,
-          },
-        }
-      );
-
+      const res = await axiosInstance.post("/regions", {
+        geojson: drawnGeoJSON,
+        centroid: { type: "Point", coordinates: centroid },
+      });
       const responseData = res.data.data || {};
       setAnalysisData({
         ndvi: responseData.ndvi,
@@ -183,7 +174,6 @@ export default function UnifiedCarbonEstimator() {
       setDetectedCropsData(responseData.detectedCrops || []);
 
       const hectares = parseFloat(areaHectares);
-
       if (responseData.detectedCrops?.length > 0) {
         const firstCrop = responseData.detectedCrops[0];
         const { awb: awbValue } = firstCrop;
@@ -201,7 +191,6 @@ export default function UnifiedCarbonEstimator() {
         const basicEarnings = (parseFloat(basicCredits) * 400).toFixed(2);
         setEstimatedEarnings(basicEarnings);
       }
-
       setAnalysisComplete(true);
       toast.success("Analysis complete!", { id: toastId });
     } catch (error) {
@@ -212,147 +201,217 @@ export default function UnifiedCarbonEstimator() {
     }
   };
 
-  const handleStartEarning = () => {
+  const handleStartEarning = async () => {
     if (!user) {
       navigate("/register");
-    } else {
-      toast.info("Redirecting to your dashboard...");
+      return;
+    }
+    if (!drawnGeoJSON || !areaHectares) {
+      toast.error("Please analyze the land first.");
+      return;
+    }
+    const toastId = toast.loading("Submitting land plot data...");
+    try {
+      await axiosInstance.put("/farmers/land-plot", {
+        geoJson: drawnGeoJSON.geometry,
+        areaInHectares: parseFloat(areaHectares),
+      });
+      toast.success("Land plot submitted successfully!", { id: toastId });
+      navigate("/");
+    } catch (error) {
+      console.error("Error submitting land plot:", error);
+      toast.error("Failed to submit land plot. Please try again.", { id: toastId });
     }
   };
 
   if (loading)
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
 
   return (
     <>
       <Toaster position="top-center" richColors />
-      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Carbon Estimator</CardTitle>
-            <CardDescription>
-              Draw your land boundary to analyze crops, calculate carbon credits, and estimate
-              potential earnings.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[500px] w-full rounded-lg overflow-hidden border shadow-inner">
-              <MapContainer
-                center={userLocation}
-                zoom={13}
-                style={{ height: "100%", width: "100%" }}
-              >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
-                <DrawingComponent setMapInstance={setMapInstance} />
-              </MapContainer>
-            </div>
+      <div className="min-h-screen bg-background text-foreground">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold tracking-tight mb-4">Carbon Estimator</h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Use satellite analysis to calculate carbon credits and estimate earnings from your
+              land.
+            </p>
+          </div>
 
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <InfoBlock title="Area (ha)" data={areaHectares} placeholder="0.00" icon={LandPlot} />
-              <InfoBlock
-                title="NDVI"
-                data={analysisData.ndvi !== null ? analysisData.ndvi.toFixed(3) : null}
-                placeholder="N/A"
-                icon={BarChart}
-              />
-              <InfoBlock
-                title="Carbon Credits"
-                data={carbonCredits}
-                placeholder="0.00"
-                icon={Leaf}
-              />
-              <InfoBlock
-                title="Est. Earnings (INR)"
-                data={estimatedEarnings ? `₹${estimatedEarnings}` : null}
-                placeholder="₹0.00"
-                icon={Coins}
-              />
-            </div>
-
-            {analysisComplete && (
-              <div className="mt-6 space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>🌍 Land Cover Analysis</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p>
-                      <strong>Detected Land Cover:</strong> {landCoverType || "N/A"}
-                    </p>
-                    {detectedCropsData.length > 0 && (
-                      <p className="mt-2">
-                        <strong>Matching Crops:</strong>{" "}
-                        {detectedCropsData.map((crop) => crop.crop).join(", ")}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {detectedCropsData.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold mb-3">🌾 Detailed Crop Analysis</h3>
-                    <div className="space-y-3">
-                      {detectedCropsData.map((crop, index) => (
-                        <Card key={index}>
-                          <CardContent className="pt-6">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm items-center">
-                              <div>
-                                <strong>Crop:</strong> {crop.crop}
-                              </div>
-                              <div>
-                                <strong>Region:</strong> {crop.region}
-                              </div>
-                              <div>
-                                <strong>AWB:</strong> {crop.awb?.toFixed(3)}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>💰 Summary & Next Steps</CardTitle>
-                    <CardDescription>
-                      Based on our analysis, here is your potential for carbon credits and earnings.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <Button onClick={handleStartEarning} size="lg" className="flex-1">
-                        Start Earning Now
-                      </Button>
-                      <Button
-                        onClick={() => toast.info("This feature will be available soon.")}
-                        size="lg"
-                        variant="secondary"
-                        className="flex-1"
-                      >
-                        Submit for Verification
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+          <Card className="mb-8">
+            <CardContent className="p-6 md:p-8">
+              <div className="h-[500px] md:h-[600px] w-full rounded-lg overflow-hidden border shadow-inner">
+                <MapContainer
+                  center={userLocation}
+                  zoom={13}
+                  style={{ height: "100%", width: "100%", zIndex: 0 }}
+                  className="rounded-lg"
+                >
+                  <TileLayer
+                    url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                    attribution="Tiles &copy; Esri &mdash; Source: Esri, Maxar, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community"
+                  />
+                  <DrawingComponent setMapInstance={setMapInstance} />
+                </MapContainer>
               </div>
-            )}
 
-            <div className="mt-6 flex justify-between gap-4">
-              <Button variant="outline" onClick={resetAll} disabled={isSubmitting}>
-                Reset Boundary
-              </Button>
-              {drawnGeoJSON && !analysisComplete && (
-                <Button onClick={handleAnalyze} disabled={isSubmitting}>
-                  {isSubmitting ? "Analyzing..." : "Analyze Land"}
+              <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <InfoBlock
+                  title="Area (Hectares)"
+                  data={areaHectares}
+                  placeholder="0.00"
+                  icon={LandPlot}
+                />
+                <InfoBlock
+                  title="NDVI Index"
+                  data={analysisData.ndvi !== null ? analysisData.ndvi.toFixed(3) : null}
+                  placeholder="N/A"
+                  icon={BarChart}
+                />
+                <InfoBlock
+                  title="Carbon Credits"
+                  data={carbonCredits}
+                  placeholder="0.00"
+                  icon={Leaf}
+                />
+                <InfoBlock
+                  title="Est. Earnings (INR)"
+                  data={estimatedEarnings ? `₹${estimatedEarnings}` : null}
+                  placeholder="₹0.00"
+                  icon={Coins}
+                />
+              </div>
+
+              <div className="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <Button variant="outline" onClick={resetAll} disabled={isSubmitting}>
+                  Reset Boundary
                 </Button>
+                {drawnGeoJSON && !analysisComplete && (
+                  <Button onClick={handleAnalyze} disabled={isSubmitting} size="lg">
+                    {isSubmitting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Zap className="mr-2 h-4 w-4" />
+                    )}
+                    {isSubmitting ? "Analyzing..." : "Analyze Land"}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {analysisComplete && (
+            <div className="space-y-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center text-xl">
+                    <MapPin className="w-6 h-6 mr-3 text-primary" />
+                    Land Cover Analysis
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-2">Detected Land Cover</h4>
+                    <Badge variant="secondary" className="text-base py-1 px-3">
+                      {landCoverType || "N/A"}
+                    </Badge>
+                  </div>
+                  {detectedCropsData.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-foreground mb-2">Matching Crops</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {detectedCropsData.map((crop, index) => (
+                          <Badge key={index} variant="outline">
+                            {crop.crop}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {detectedCropsData.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center text-xl">
+                      <TrendingUp className="w-6 h-6 mr-3 text-primary" />
+                      Detailed Crop Analysis
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid gap-4">
+                    {detectedCropsData.map((crop, index) => (
+                      <div key={index} className="p-4 bg-muted rounded-lg border">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm items-center">
+                          <div className="flex items-center font-medium">
+                            <CheckCircle2 className="w-4 h-4 text-green-500 mr-2" />
+                            Crop:
+                            <span className="ml-2 font-normal text-muted-foreground">
+                              {crop.crop}
+                            </span>
+                          </div>
+                          <div className="flex items-center font-medium">
+                            <MapPin className="w-4 h-4 text-blue-500 mr-2" />
+                            Region:
+                            <span className="ml-2 font-normal text-muted-foreground">
+                              {crop.region}
+                            </span>
+                          </div>
+                          <div className="flex items-center font-medium">
+                            <BarChart className="w-4 h-4 text-purple-500 mr-2" />
+                            AWB:
+                            <span className="ml-2 font-normal text-muted-foreground">
+                              {crop.awb?.toFixed(3)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
               )}
+
+              <Card className="bg-primary text-primary-foreground">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-2xl">
+                    <Coins className="w-8 h-8 mr-3" />
+                    Summary & Next Steps
+                  </CardTitle>
+                  <CardDescription className="text-primary-foreground/80 text-base">
+                    Based on our analysis, here is your potential for carbon credits and earnings.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Button
+                      onClick={handleStartEarning}
+                      size="lg"
+                      className="flex-1 bg-primary-foreground text-primary hover:bg-primary-foreground/90 font-semibold py-6 text-base"
+                    >
+                      <Coins className="w-5 h-5 mr-2" />
+                      Start Earning Now
+                    </Button>
+                    <Button
+                      onClick={() => toast.info("This feature will be available soon.")}
+                      size="lg"
+                      variant="secondary"
+                      className="flex-1 font-semibold py-6 text-base"
+                    >
+                      <CheckCircle2 className="w-5 h-5 mr-2" />
+                      Submit for Verification
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
       </div>
     </>
   );

@@ -8,7 +8,7 @@ import { SeasonalLog } from "../models/seasonalLog.model.js";
 
 const updateFarmerLandPlot = asyncHandler(async (req, res) => {
   const { geoJson, areaInHectares } = req.body;
-
+  console.log(geoJson, areaInHectares);
   if (!geoJson || !areaInHectares) {
     throw new ApiError(400, "GeoJSON data and area are required");
   }

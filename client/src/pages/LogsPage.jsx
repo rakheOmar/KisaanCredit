@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import axiosInstance from "@/lib/axios";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Table,
@@ -13,8 +13,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Leaf, CalendarDays, Banknote, Sprout, Activity, TrendingUp } from "lucide-react";
+import {
+  Leaf,
+  CalendarDays,
+  Banknote,
+  Sprout,
+  Activity,
+  TrendingUp,
+  CreditCard,
+} from "lucide-react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -31,6 +40,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 const LogsPage = () => {
   const { user } = useAuth();
   const { farmerId } = useParams();
+  const navigate = useNavigate();
   const [seasonalLogs] = useState([
     {
       _id: "static1",
@@ -82,6 +92,11 @@ const LogsPage = () => {
     }
     fetchDailyLogs();
   }, [user, farmerId]);
+
+  // Handle navigation to give credit page
+  const handleGiveCredit = () => {
+    navigate(`/give-credit/${farmerId}`);
+  };
 
   if (loading) {
     return (
@@ -436,6 +451,12 @@ const LogsPage = () => {
                 <p className="text-xs text-muted-foreground mt-1">
                   Est. value @ ₹{lowPriceINR}-₹{highPriceINR} per credit
                 </p>
+              </div>
+              <div className="pt-4">
+                <Button onClick={handleGiveCredit} className="w-full" size="sm">
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Issue Credit
+                </Button>
               </div>
             </CardContent>
           </Card>

@@ -25,6 +25,9 @@ import ProjectDetailsPage from "@/pages/ProjectDetailsPage";
 import EstimateEarningsPage from "@/pages/EstimateEarningsPage";
 import StartEarningPage from "@/pages/StartEarningPage";
 import LogsPage from "@/pages/LogsPage";
+import GiveCreditPage from "@/pages/GiveCreditPage";
+import Transactions from "@/pages/Transactions";
+import TransactionVerify from "@/pages/TransactionVerify";
 
 const hiddenLayoutRoutes = ["/login", "/signup", "/dashboard"];
 
@@ -70,6 +73,9 @@ function App() {
           <Route path="/estimate-earnings" element={<EstimateEarningsPage />} />
           <Route path="/start-earning" element={<StartEarningPage />} />
           <Route path="/logs/:farmerId" element={<LogsPage />} />
+          <Route path="/give-credit/:userid" element={<GiveCreditPage />} />
+          <Route path="/transactions" element={<Transactions />} />
+          <Route path="/transactions/verify/:hash" element={<TransactionVerify />} />
         </Routes>
       </Layout>
     </Router>

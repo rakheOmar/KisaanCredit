@@ -35,7 +35,7 @@ const ChatBotButton = () => {
         parts: [{ text: msg.text }],
       }));
 
-      const res = await axios.post("/chat", {
+      const res = await axios.post("/chatbot", {
         message: currentInput,
         history,
       });

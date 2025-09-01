@@ -1,12 +1,16 @@
-async function main() {
-  const PaymentLogger = await ethers.getContractFactory("PaymentLogger");
-  const paymentLogger = await PaymentLogger.deploy();
-  await paymentLogger.waitForDeployment();
+const hre = require("hardhat");
 
-  console.log(
-    "PaymentLogger contract deployed to:",
-    await paymentLogger.getAddress()
-  );
+async function main() {
+  console.log("Deploying CreditLedger contract...");
+
+  const CreditLedger = await hre.ethers.getContractFactory("CreditLedger");
+  const creditLedger = await CreditLedger.deploy();
+
+  await creditLedger.waitForDeployment();
+
+  const contractAddress = await creditLedger.getAddress();
+
+  console.log(`CreditLedger contract deployed to: ${contractAddress}`);
 }
 
 main().catch((error) => {

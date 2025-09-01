@@ -49,23 +49,25 @@ app.use("/peerjs", peerServer);
 
 import userRouter from "./routes/user.routes.js";
 import healthcheckRouter from "./routes/healthcheck.routes.js";
-import paymentRouter from "./routes/payment.routes.js";
-import chatbotRoutes from "./routes/chat.routes.js";
+// import paymentRouter from "./routes/payment.routes.js";
+import chatbotRoutes from "./routes/chatbot.routes.js";
 import chatRouter from "./routes/chat.routes.js";
 import regionRouter from "./routes/region.routes.js";
 import farmerRouter from "./routes/farmer.routes.js";
 import projectRoutes from "./routes/project.routes.js";
 import farmActivityRoutes from "./routes/farmActivity.routes.js";
+import transactionRoutes from "./routes/transaction.routes.js";
 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/healthcheck", healthcheckRouter);
-app.use("/api/v1/payments", paymentRouter);
+// app.use("/api/v1/payments", paymentRouter);
 app.use("/api/v1/chatbot", chatbotRoutes);
 app.use("/api/v1/chat", chatRouter);
 app.use("/api/v1/regions", regionRouter);
 app.use("/api/v1/farmers", farmerRouter);
 app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/farm-activity", farmActivityRoutes);
+app.use("/api/v1/transactions", transactionRoutes);
 
 io.on("connection", (socket) => {
   console.log(`Socket.IO client connected: ${socket.id}`);
