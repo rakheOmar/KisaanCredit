@@ -28,6 +28,8 @@ import LogsPage from "@/pages/LogsPage";
 import GiveCreditPage from "@/pages/GiveCreditPage";
 import Transactions from "@/pages/Transactions";
 import TransactionVerify from "@/pages/TransactionVerify";
+import About from "./pages/AboutPage";
+
 
 const hiddenLayoutRoutes = ["/login", "/signup", "/dashboard"];
 
@@ -62,6 +64,7 @@ function App() {
           <Route path="/peer-call/:roomId" element={<PeerJSVideoCallPage />} />
           <Route path="/user-profile/:id" element={<UserProfile />} />
           <Route path="/payment" element={<PaymentPage />} />
+          <Route path="/about" element={<About />} />
           <Route path="/verify-transaction" element={<TransactionVerifier />} />
           <Route path="/aadhaar-verify" element={<AadhaarVerificationPage />} />
           <Route path="/dashboard" element={<Dashboard />} />
@@ -76,6 +79,7 @@ function App() {
           <Route path="/give-credit/:userid" element={<GiveCreditPage />} />
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/transactions/verify/:hash" element={<TransactionVerify />} />
+
         </Routes>
       </Layout>
     </Router>
