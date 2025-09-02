@@ -13,8 +13,16 @@
 
 KisaanCredit is a full-stack 'Soil to Sale' ecosystem that digitizes and democratizes the carbon farming market for India's smallholder farmers. We combine a user-friendly mobile app with the immutable trust of blockchain and the scientific precision of AI-powered remote sensing to create a transparent, scalable, and profitable bridge between grassroots climate action and the global carbon economy.
 
-## Video Demo - Click to play the video
-[![Everything Is AWESOME](https://img.youtube.com/vi/StTqXEQ2l-Y/0.jpg)](https://www.youtube.com/watch?v=StTqXEQ2l-Y "Everything Is AWESOME")
+## Video Demo
+<div align="left">
+    <h3>KisaanCredit - Project Manager (Website)</h3>
+    <video src= "https://github.com/user-attachments/assets/ec7defa1-e6c5-40d2-84bd-c54e26a3fcec"/>
+</div>
+       
+<div align="left">
+    <h3>KisaanCredit - Farmer (Flutter App)</h3>
+    <video src= "https://github.com/user-attachments/assets/ec7defa1-e6c5-40d2-84bd-c54e26a3fcec"/>
+</div>
 
 ## The Problem
 
@@ -154,4 +162,5 @@ Fork the Project
 
 ## License
 Distributed under the MIT License. See LICENSE for more information.
+
 
