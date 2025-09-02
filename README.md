@@ -57,7 +57,7 @@ Our platform integrates four innovations into a seamless ecosystem:
 
 ## Project Structure
 ```
-BhoomiCredit/
+KisaanCredit/
 ├── app/ # Flutter Mobile App
 │ └── lib/
 │ ├── assets/ # Vosk speech models
@@ -154,3 +154,4 @@ Fork the Project
 
 ## License
 Distributed under the MIT License. See LICENSE for more information.
+
