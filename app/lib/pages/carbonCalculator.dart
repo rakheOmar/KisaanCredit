@@ -767,8 +767,8 @@ class _CarbonCalculatorPageState extends State<CarbonCalculatorPage>
                   child: FlutterMap(
                     mapController: mapController,
                     options: MapOptions(
-                      initialCenter: const LatLng(20.5937, 78.9629),
-                      initialZoom: 6,
+                      initialCenter: const LatLng(19.20917475, 72.987872),
+                      initialZoom: 15,
                       onTap: (tapPosition, point) => _addPoint(point),
                     ),
                     children: [

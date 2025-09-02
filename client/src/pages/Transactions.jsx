@@ -239,7 +239,7 @@ const Transactions = () => {
         )}
 
         <Card>
-          <CardHeader className="border-b bg-muted/50">
+          <CardHeader className="border-b">
             <CardTitle className="text-xl font-semibold">All Transactions</CardTitle>
             <div className="flex items-center gap-4 mt-4">
               <div className="relative flex-1 max-w-md">

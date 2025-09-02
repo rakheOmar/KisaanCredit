@@ -30,14 +30,13 @@ import Transactions from "@/pages/Transactions";
 import TransactionVerify from "@/pages/TransactionVerify";
 import About from "./pages/AboutPage";
 
-
 const hiddenLayoutRoutes = ["/login", "/signup", "/dashboard"];
 
 const Layout = ({ children }) => {
   const location = useLocation();
   const hideLayout = hiddenLayoutRoutes.includes(location.pathname);
 
-  const noPaddingRoutes = [];
+  const noPaddingRoutes = ["/"];
   const addPadding = !hideLayout && !noPaddingRoutes.includes(location.pathname);
 
   return (
@@ -79,7 +78,6 @@ function App() {
           <Route path="/give-credit/:userid" element={<GiveCreditPage />} />
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/transactions/verify/:hash" element={<TransactionVerify />} />
-
         </Routes>
       </Layout>
     </Router>
