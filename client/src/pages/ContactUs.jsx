@@ -5,39 +5,38 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { MailIcon, MapPinIcon, MessageCircle, PhoneIcon } from "lucide-react";
-
 const contactDetails = [
   {
     icon: MailIcon,
     title: "Email",
-    description: "Our friendly team is here to help.",
-    link: "mailto:xyz@gmail.com",
-    text: "xyz@gmail.com",
+    description: "Reach out to our KisaanCredit support team anytime.",
+    link: "mailto:kisaancredit@gmail.com",
+    text: "kisaancredit@gmail.com",
   },
   {
     icon: MessageCircle,
-    title: "Live chat",
-    description: "Our friendly team is here to help.",
+    title: "Live Chat",
+    description: "Chat with KisaanCredit support instantly.",
     link: "#",
-    text: "Start new chat",
+    text: "Start a new chat",
   },
   {
     icon: MapPinIcon,
     title: "Office",
-    description: "Come say hello at our office HQ.",
-    link: "https://map.google.com",
+    description: "Visit our KisaanCredit headquarters.",
+    link: "https://maps.google.com/?q=KisaanCredit+HQ",
     text: (
       <>
-        XYZ <br /> ABCD
+        KisaanCredit HQ <br /> New Delhi, India
       </>
     ),
   },
   {
     icon: PhoneIcon,
     title: "Phone",
-    description: "Mon-Fri from 8am to 5pm.",
+    description: "Mon–Fri from 9am to 6pm IST.",
     link: "tel:+91 9999999999",
-    text: "+1 (555) 000-0000",
+    text: "+91 99999 99999",
   },
 ];
 

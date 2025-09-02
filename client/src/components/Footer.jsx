@@ -3,32 +3,32 @@ import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { DribbbleIcon, GithubIcon, TwitchIcon, TwitterIcon } from "lucide-react";
+import { Leaf, TwitterIcon, GithubIcon, FacebookIcon, LinkedinIcon } from "lucide-react";
 
 const footerLinks = [
   {
-    title: "Overview",
-    href: "#",
+    title: "About Us",
+    href: "#about",
   },
   {
-    title: "Features",
-    href: "#",
+    title: "Services",
+    href: "#services",
   },
   {
-    title: "Pricing",
-    href: "#",
+    title: "Contact",
+    href: "#contact",
   },
   {
-    title: "Careers",
-    href: "#",
+    title: "Blog",
+    href: "#blog",
   },
   {
-    title: "Help",
-    href: "#",
+    title: "Help Center",
+    href: "#help",
   },
   {
-    title: "Privacy",
-    href: "#",
+    title: "Privacy Policy",
+    href: "#privacy",
   },
 ];
 
@@ -42,13 +42,11 @@ const Footer = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/email/newsletter`, {
+      await axios.post(`${import.meta.env.VITE_API_BASE_URL}/email/newsletter`, {
         email,
       });
       setEmail("");
-      // You can add a toast here if needed
     } catch (error) {
-      // Optionally handle error
     } finally {
       setLoading(false);
     }
@@ -59,17 +57,13 @@ const Footer = () => {
       <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-12 flex flex-col sm:flex-row items-start justify-between gap-x-8 gap-y-10 px-6 xl:px-0">
           <div>
-            <svg
-              id="logo-7"
-              width="124"
-              height="32"
-              viewBox="0 0 124 32"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {/* SVG PATHS */}
-            </svg>
+            {/* KisaanCredit Logo */}
+            <div className="flex items-center gap-2">
+              <Leaf className="w-8 h-8 text-green-600" />
+              <span className="text-xl font-bold text-foreground">KisaanCredit</span>
+            </div>
 
+            {/* Footer Links */}
             <ul className="mt-6 flex items-center gap-4 flex-wrap">
               {footerLinks.map(({ title, href }) => (
                 <li key={title}>
@@ -81,6 +75,7 @@ const Footer = () => {
             </ul>
           </div>
 
+          {/* Newsletter */}
           <div className="max-w-xs w-full">
             <h6 className="font-semibold">Stay up to date</h6>
             <form onSubmit={handleSubmit} className="mt-6 flex items-center gap-2">
@@ -100,27 +95,24 @@ const Footer = () => {
 
         <Separator />
 
+        {/* Bottom Bar */}
         <div className="py-8 flex flex-col-reverse sm:flex-row items-center justify-between gap-x-2 gap-y-5 px-6 xl:px-0">
           <span className="text-muted-foreground">
-            &copy; {new Date().getFullYear()}{" "}
-            <a href="/" target="_blank" rel="noopener noreferrer">
-              Shadcn UI Blocks
-            </a>
-            . All rights reserved.
+            &copy; {new Date().getFullYear()} KisaanCredit. All rights reserved.
           </span>
 
           <div className="flex items-center gap-5 text-muted-foreground">
             <a href="#" target="_blank" rel="noopener noreferrer">
-              <TwitterIcon className="h-5 w-5" />
+              <TwitterIcon className="h-5 w-5 hover:text-foreground" />
             </a>
             <a href="#" target="_blank" rel="noopener noreferrer">
-              <DribbbleIcon className="h-5 w-5" />
+              <FacebookIcon className="h-5 w-5 hover:text-foreground" />
             </a>
             <a href="#" target="_blank" rel="noopener noreferrer">
-              <TwitchIcon className="h-5 w-5" />
+              <LinkedinIcon className="h-5 w-5 hover:text-foreground" />
             </a>
             <a href="#" target="_blank" rel="noopener noreferrer">
-              <GithubIcon className="h-5 w-5" />
+              <GithubIcon className="h-5 w-5 hover:text-foreground" />
             </a>
           </div>
         </div>

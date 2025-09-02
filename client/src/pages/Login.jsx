@@ -61,7 +61,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="max-w-xs w-full flex flex-col items-center">
         <Logo className="h-9 w-9" />
-        <p className="mt-4 text-xl font-bold tracking-tight text-center">Log in</p>
+        <p className="mt-4 text-xl font-bold tracking-tight text-center">Log in to KisaanCredit</p>
 
         <Button className="mt-8 w-full gap-3">
           <GoogleLogo />

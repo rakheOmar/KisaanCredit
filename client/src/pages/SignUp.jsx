@@ -93,7 +93,7 @@ const SignUp = () => {
     <div className="min-h-screen flex items-center justify-center">
       <div className="max-w-xs w-full flex flex-col items-center">
         <Logo className="h-9 w-9" />
-        <p className="mt-4 text-xl font-bold tracking-tight">Sign up</p>
+        <p className="mt-4 text-xl font-bold tracking-tight">Sign up to KisaanCredit</p>
 
         <Form {...form}>
           <form className="w-full space-y-4 mt-6" onSubmit={form.handleSubmit(onSubmit)}>

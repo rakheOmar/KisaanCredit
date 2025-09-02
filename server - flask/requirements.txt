@@ -9,38 +9,20 @@ werkzeug
 xmltodict
 thefuzz
 python-Levenshtein
-
-# FastAPI and Server
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-python-multipart==0.0.6
-
-# Core ML and LangChain
-langchain==0.1.0
-langchain-community==0.0.10
-langchain-core==0.1.10
-langchain-google-genai==1.0.1
-langchain-text-splitters==0.0.1
-
-# Vector Store and Embeddings
-chromadb==0.4.22
-sentence-transformers==2.2.2
-
-# Web Scraping and Requests
-requests==2.31.0
-beautifulsoup4==4.12.2
-duckduckgo-search==4.1.1
-
-# Text Processing and Language
-langdetect==1.0.9
-pydantic==2.5.2
-
-# Text-to-Speech
-gTTS==2.4.0
-
-# Environment Management
-python-dotenv==1.0.0
-
-# Additional utilities
-typing-extensions==4.8.0
-numpy==1.26.2
+fastapi
+uvicorn[standard]
+python-multipart
+langchain
+langchain-community
+langchain-core
+langchain-google-genai
+langchain-text-splitters
+chromadb
+sentence-transformers
+beautifulsoup4
+duckduckgo-search
+langdetect
+pydantic
+gTTS
+python-dotenv
+typing-extensions
