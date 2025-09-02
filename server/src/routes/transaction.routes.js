@@ -8,7 +8,7 @@ import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.use(verifyJWT); // Apply authentication to all routes
+// router.use(verifyJWT); // Apply authentication to all routes
 
 router.route("/").get(getAllTransactions);
 router.route("/stats").get(getTransactionStats);

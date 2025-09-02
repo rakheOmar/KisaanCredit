@@ -203,7 +203,7 @@ export default function UnifiedCarbonEstimator() {
 
   const handleStartEarning = async () => {
     if (!user) {
-      navigate("/register");
+      navigate("/signup");
       return;
     }
     if (!drawnGeoJSON || !areaHectares) {

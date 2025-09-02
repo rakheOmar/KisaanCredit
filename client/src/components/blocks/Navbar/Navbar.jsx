@@ -38,7 +38,7 @@ export default function Navbar() {
         nav.classList.add("scrolling");
         const scrollProgress = Math.min(window.scrollY / maxScroll, 1);
         const easeProgress = 1 - Math.pow(1 - scrollProgress, 4);
-        const minWidth = 700;
+        const minWidth = 800;
         const maxWidth = window.innerWidth * 0.9;
         const currentWidth = maxWidth - (maxWidth - minWidth) * easeProgress;
         if (window.innerWidth >= 768) {

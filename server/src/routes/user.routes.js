@@ -28,10 +28,10 @@ router.post("/change-password", verifyJWT, changeCurrentPassword);
 router.get("/me", verifyJWT, getCurrentUser);
 router.patch("/me", verifyJWT, updateCurrentUser);
 router.patch("/me/avatar", verifyJWT, upload.single("avatar"), updateUserAvatar);
-router.get("/profile/:id", verifyJWT, getUserProfile);
+router.get("/profile/:id", getUserProfile);
 router.post("/credits/add", verifyJWT, addCarbonCredits);
 router.post("/credits/redeem", verifyJWT, redeemCarbonCredits);
 router.get("/credits/summary", verifyJWT, getCreditsSummary);
-router.get("/credits/top", verifyJWT, getTopCarbonCreditUsers);
+router.get("/credits/top", getTopCarbonCreditUsers);
 
 export default router;
