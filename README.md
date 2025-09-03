@@ -1,4 +1,4 @@
-# KisaanCredit: The Digital MRV Bridge for Indian Agriculture
+# KisaanCredit: The Digital MRV Bridge for Indian Agriculture - Team TheErudition NABARD'25
 
 <p align="center">
 <img src="https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter Badge"/>
@@ -162,6 +162,7 @@ Fork the Project
 
 ## License
 Distributed under the MIT License. See LICENSE for more information.
+
 
 
 
