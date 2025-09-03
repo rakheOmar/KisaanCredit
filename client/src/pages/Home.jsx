@@ -89,10 +89,10 @@ export default function Home() {
     },
     {
       id: 4,
-      name: "Meera Joshi",
+      name: "Rakesh Joshi",
       location: "Rajasthan",
       image:
-        "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&q=60&crop=faces",
+        "https://images.unsplash.com/photo-1582750433449-648ed127bb54?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&q=60&crop=faces",
       review: "सत्यापन प्रक्रिया आसान है और भुगतान हमेशा समय पर होता है। बहुत सिफारिश करूंगी!",
       rating: 5,
       creditsEarned: 110,
@@ -223,9 +223,9 @@ export default function Home() {
 
     const interval = setInterval(() => {
       setStats((prev) => ({
-        totalCarbon: prev.totalCarbon + Math.floor(Math.random() * 5),
-        totalCredits: prev.totalCredits + Math.floor(Math.random() * 3),
-        activeFarmers: prev.activeFarmers + Math.floor(Math.random() * 2),
+        totalCarbon: prev.totalCarbon + 0,
+        totalCredits: prev.totalCredits + 0,
+        activeFarmers: prev.activeFarmers + 0,
       }));
     }, 5000);
 
@@ -314,7 +314,6 @@ export default function Home() {
                 <div className="flex items-center justify-center space-x-1">
                   <IndianRupee className="h-3 w-3 text-foreground" />
                   <span className="text-sm font-semibold">
-                    ₹
                     {(user.moneyEarned ?? 0).toLocaleString("en-IN", {
                       minimumFractionDigits: 0,
                       maximumFractionDigits: 2,
@@ -589,7 +588,7 @@ export default function Home() {
             <CardHeader className="text-center py-8">
               <CardTitle className="text-3xl font-black flex items-center justify-center gap-3">
                 <Trophy className="h-8 w-8" />
-                Complete Rankings
+                Monthly Rankings
                 <Trophy className="h-8 w-8" />
               </CardTitle>
             </CardHeader>

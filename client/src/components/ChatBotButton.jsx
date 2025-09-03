@@ -31,8 +31,7 @@ const ChatBotButton = () => {
       typeof window !== "undefined" &&
       ("webkitSpeechRecognition" in window || "SpeechRecognition" in window)
     ) {
-      const SpeechRecognition =
-        window.SpeechRecognition || window.webkitSpeechRecognition;
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognitionInstance = new SpeechRecognition();
 
       recognitionInstance.continuous = false;
@@ -73,7 +72,7 @@ const ChatBotButton = () => {
       setCopiedCode(text);
       setTimeout(() => setCopiedCode(""), 2000);
     } catch (err) {
-      console.error('Failed to copy text: ', err);
+      console.error("Failed to copy text: ", err);
     }
   };
 
@@ -83,34 +82,46 @@ const ChatBotButton = () => {
       // Split content into parts for processing
       const parts = [];
       let currentIndex = 0;
-      
+
       // Process the content line by line
-      const lines = content.split('\n');
+      const lines = content.split("\n");
       const processedLines = [];
-      
+
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        
+
         // Headers
-        if (line.startsWith('### ')) {
-          processedLines.push(<h3 key={i} className="text-base font-medium mb-1 mt-2">{line.slice(4)}</h3>);
-        } else if (line.startsWith('## ')) {
-          processedLines.push(<h2 key={i} className="text-lg font-semibold mb-2 mt-3">{line.slice(3)}</h2>);
-        } else if (line.startsWith('# ')) {
-          processedLines.push(<h1 key={i} className="text-xl font-bold mb-2 mt-4">{line.slice(2)}</h1>);
+        if (line.startsWith("### ")) {
+          processedLines.push(
+            <h3 key={i} className="text-base font-medium mb-1 mt-2">
+              {line.slice(4)}
+            </h3>
+          );
+        } else if (line.startsWith("## ")) {
+          processedLines.push(
+            <h2 key={i} className="text-lg font-semibold mb-2 mt-3">
+              {line.slice(3)}
+            </h2>
+          );
+        } else if (line.startsWith("# ")) {
+          processedLines.push(
+            <h1 key={i} className="text-xl font-bold mb-2 mt-4">
+              {line.slice(2)}
+            </h1>
+          );
         }
         // Code blocks
-        else if (line.startsWith('```')) {
-          const language = line.slice(3) || 'text';
+        else if (line.startsWith("```")) {
+          const language = line.slice(3) || "text";
           const codeLines = [];
           let j = i + 1;
-          
-          while (j < lines.length && !lines[j].startsWith('```')) {
+
+          while (j < lines.length && !lines[j].startsWith("```")) {
             codeLines.push(lines[j]);
             j++;
           }
-          
-          const codeContent = codeLines.join('\n');
+
+          const codeContent = codeLines.join("\n");
           processedLines.push(
             <div key={i} className="relative group my-3">
               <div className="flex items-center justify-between bg-gray-800 text-gray-200 px-4 py-2 text-sm rounded-t-md">
@@ -121,7 +132,7 @@ const ChatBotButton = () => {
                   className="h-6 w-6 p-0 text-gray-400 hover:text-white"
                   onClick={() => copyToClipboard(codeContent)}
                 >
-                  {copiedCode === codeContent ? '✓' : '📋'}
+                  {copiedCode === codeContent ? "✓" : "📋"}
                 </Button>
               </div>
               <pre className="bg-gray-900 text-gray-100 p-4 rounded-b-md overflow-x-auto text-sm">
@@ -133,31 +144,45 @@ const ChatBotButton = () => {
         }
         // Lists
         else if (line.match(/^\s*[-*+]\s+/)) {
-          const listContent = line.replace(/^\s*[-*+]\s+/, '');
-          processedLines.push(<div key={i} className="text-sm ml-4 mb-1">• {processInlineMarkdown(listContent)}</div>);
-        }
-        else if (line.match(/^\s*\d+\.\s+/)) {
-          const listContent = line.replace(/^\s*\d+\.\s+/, '');
-          processedLines.push(<div key={i} className="text-sm ml-4 mb-1">{processInlineMarkdown(listContent)}</div>);
+          const listContent = line.replace(/^\s*[-*+]\s+/, "");
+          processedLines.push(
+            <div key={i} className="text-sm ml-4 mb-1">
+              • {processInlineMarkdown(listContent)}
+            </div>
+          );
+        } else if (line.match(/^\s*\d+\.\s+/)) {
+          const listContent = line.replace(/^\s*\d+\.\s+/, "");
+          processedLines.push(
+            <div key={i} className="text-sm ml-4 mb-1">
+              {processInlineMarkdown(listContent)}
+            </div>
+          );
         }
         // Blockquotes
-        else if (line.startsWith('> ')) {
+        else if (line.startsWith("> ")) {
           processedLines.push(
-            <blockquote key={i} className="border-l-4 border-muted-foreground/25 pl-4 italic text-muted-foreground my-2">
+            <blockquote
+              key={i}
+              className="border-l-4 border-muted-foreground/25 pl-4 italic text-muted-foreground my-2"
+            >
               {processInlineMarkdown(line.slice(2))}
             </blockquote>
           );
         }
         // Regular paragraphs
         else if (line.trim()) {
-          processedLines.push(<p key={i} className="mb-2">{processInlineMarkdown(line)}</p>);
+          processedLines.push(
+            <p key={i} className="mb-2">
+              {processInlineMarkdown(line)}
+            </p>
+          );
         }
         // Empty lines
         else {
           processedLines.push(<br key={i} />);
         }
       }
-      
+
       return processedLines;
     };
 
@@ -165,35 +190,91 @@ const ChatBotButton = () => {
     const processInlineMarkdown = (text) => {
       const parts = [];
       let currentPos = 0;
-      
+
       // Simple regex-based processing for inline elements
       const patterns = [
-        { regex: /\*\*(.*?)\*\*/g, component: (match, content) => <strong key={currentPos++} className="font-bold">{content}</strong> },
-        { regex: /\*(.*?)\*/g, component: (match, content) => <em key={currentPos++} className="italic">{content}</em> },
-        { regex: /`([^`]+)`/g, component: (match, content) => <code key={currentPos++} className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono">{content}</code> },
-        { regex: /\[([^\]]+)\]\(([^)]+)\)/g, component: (match, text, url) => <a key={currentPos++} href={url} className="text-blue-500 hover:text-blue-700 underline" target="_blank" rel="noopener noreferrer">{text}</a> }
+        {
+          regex: /\*\*(.*?)\*\*/g,
+          component: (match, content) => (
+            <strong key={currentPos++} className="font-bold">
+              {content}
+            </strong>
+          ),
+        },
+        {
+          regex: /\*(.*?)\*/g,
+          component: (match, content) => (
+            <em key={currentPos++} className="italic">
+              {content}
+            </em>
+          ),
+        },
+        {
+          regex: /`([^`]+)`/g,
+          component: (match, content) => (
+            <code key={currentPos++} className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono">
+              {content}
+            </code>
+          ),
+        },
+        {
+          regex: /\[([^\]]+)\]\(([^)]+)\)/g,
+          component: (match, text, url) => (
+            <a
+              key={currentPos++}
+              href={url}
+              className="text-blue-500 hover:text-blue-700 underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {text}
+            </a>
+          ),
+        },
       ];
-      
+
       let processedText = text;
       const elements = [];
-      
+
       // For now, let's keep it simple and just handle basic formatting
       processedText = processedText
         .split(/(\*\*.*?\*\*|\*.*?\*|`[^`]+`|\[.*?\]\(.*?\))/)
         .map((part, index) => {
           if (part.match(/^\*\*(.*)\*\*$/)) {
-            return <strong key={index} className="font-bold">{part.slice(2, -2)}</strong>;
+            return (
+              <strong key={index} className="font-bold">
+                {part.slice(2, -2)}
+              </strong>
+            );
           } else if (part.match(/^\*(.*)\*$/)) {
-            return <em key={index} className="italic">{part.slice(1, -1)}</em>;
+            return (
+              <em key={index} className="italic">
+                {part.slice(1, -1)}
+              </em>
+            );
           } else if (part.match(/^`([^`]+)`$/)) {
-            return <code key={index} className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono">{part.slice(1, -1)}</code>;
+            return (
+              <code key={index} className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono">
+                {part.slice(1, -1)}
+              </code>
+            );
           } else if (part.match(/^\[([^\]]+)\]\(([^)]+)\)$/)) {
             const match = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
-            return <a key={index} href={match[2]} className="text-blue-500 hover:text-blue-700 underline" target="_blank" rel="noopener noreferrer">{match[1]}</a>;
+            return (
+              <a
+                key={index}
+                href={match[2]}
+                className="text-blue-500 hover:text-blue-700 underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {match[1]}
+              </a>
+            );
           }
           return part;
         });
-      
+
       return processedText;
     };
 
@@ -228,18 +309,18 @@ const ChatBotButton = () => {
         const newAudio = new Audio(audioCache[text]);
         setAudio(newAudio);
         setCurrentlyPlayingText(text);
-        
+
         newAudio.onerror = (e) => {
           console.error("Audio playback error:", e);
           alert("Failed to play audio. The audio file might be corrupted.");
           setCurrentlyPlayingText(null);
         };
-        
+
         newAudio.onended = () => {
           console.log("Audio playback finished");
           setCurrentlyPlayingText(null);
         };
-        
+
         await newAudio.play();
         return;
       }
@@ -286,14 +367,15 @@ const ChatBotButton = () => {
 
       await newAudio.play();
       console.log("Audio playback started successfully");
-
     } catch (err) {
       console.error("TTS error:", err);
       setCurrentlyPlayingText(null);
-      
-      if (err.name === 'NotAllowedError') {
-        alert("Audio playback was blocked. Please click somewhere on the page first and try again.");
-      } else if (err.message.includes('HTTP error')) {
+
+      if (err.name === "NotAllowedError") {
+        alert(
+          "Audio playback was blocked. Please click somewhere on the page first and try again."
+        );
+      } else if (err.message.includes("HTTP error")) {
         alert("Failed to generate speech. Please check your internet connection.");
       } else {
         alert("Text-to-speech is not working right now. Please try again later.");
@@ -358,10 +440,10 @@ const ChatBotButton = () => {
     } catch (error) {
       console.error("Chat error:", error);
       let errorMessage = "Sorry, something went wrong. Please try again.";
-      
-      if (error.message.includes('Failed to fetch')) {
+
+      if (error.message.includes("Failed to fetch")) {
         errorMessage = "Cannot connect to the server. Please check if the backend is running.";
-      } else if (error.message.includes('HTTP error')) {
+      } else if (error.message.includes("HTTP error")) {
         errorMessage = `Server error: ${error.message}. Please try again.`;
       }
 
@@ -389,16 +471,14 @@ const ChatBotButton = () => {
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      setMessages([
-        { from: "bot", text: "Hi! I'm **Nexus**. How can I help you today?" },
-      ]);
+      setMessages([{ from: "bot", text: "Hi! I'm **Carbon bot**. How can I help you today?" }]);
     }
   }, [isOpen]);
 
   // Cleanup audio URLs when component unmounts
   useEffect(() => {
     return () => {
-      Object.values(audioCache).forEach(url => {
+      Object.values(audioCache).forEach((url) => {
         URL.revokeObjectURL(url);
       });
     };
@@ -423,7 +503,7 @@ const ChatBotButton = () => {
           <div className="border-b px-4 py-3 text-sm font-semibold flex justify-between items-center">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              Nexus Assistant
+              KisaanCredit Chat Assistant
             </div>
             <Button
               variant="ghost"
@@ -451,23 +531,23 @@ const ChatBotButton = () => {
                 ) : (
                   <div className="whitespace-pre-wrap">{msg.text}</div>
                 )}
-                
+
                 {msg.from === "bot" && (
                   <Button
                     variant="ghost"
                     size="icon"
                     className={`absolute -right-8 top-1/2 -translate-y-1/2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-muted ${
-                      currentlyPlayingText === msg.text ? 'opacity-100 bg-blue-100' : ''
+                      currentlyPlayingText === msg.text ? "opacity-100 bg-blue-100" : ""
                     }`}
                     onClick={() => playTTS(msg.text)}
                     title={currentlyPlayingText === msg.text ? "Stop audio" : "Play audio"}
                   >
-                    {currentlyPlayingText === msg.text ? '⏹️' : '🔊'}
+                    {currentlyPlayingText === msg.text ? "⏹️" : "🔊"}
                   </Button>
                 )}
               </div>
             ))}
-            
+
             {/* Recording indicator */}
             {isRecording && (
               <div className="flex justify-start">
@@ -479,7 +559,7 @@ const ChatBotButton = () => {
                 </div>
               </div>
             )}
-            
+
             {/* Loading indicator */}
             {isLoading && (
               <div className="flex justify-start">
@@ -504,9 +584,7 @@ const ChatBotButton = () => {
           {/* Suggested Prompts */}
           {messages.length <= 1 && !isLoading && (
             <div className="p-4 border-t">
-              <p className="text-xs text-muted-foreground mb-3 font-medium">
-                Try one of these:
-              </p>
+              <p className="text-xs text-muted-foreground mb-3 font-medium">Try one of these:</p>
               <div className="flex flex-wrap gap-2">
                 {suggestedPrompts.map((prompt, i) => (
                   <Button
@@ -528,15 +606,13 @@ const ChatBotButton = () => {
             <div className="flex items-center gap-2">
               <input
                 type="text"
-                placeholder={
-                  isRecording ? "Listening..." : "Ask Nexus anything..."
-                }
+                placeholder={isRecording ? "Listening..." : "Ask Carbon bot anything..."}
                 className="flex-1 px-3 py-2 border border-input rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring bg-background"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 disabled={isLoading}
                 onKeyPress={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
+                  if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     handleSend();
                   }
@@ -550,17 +626,9 @@ const ChatBotButton = () => {
                 disabled={isLoading}
                 title={isRecording ? "Stop recording" : "Start voice input"}
               >
-                {isRecording ? (
-                  <MicOff className="w-4 h-4" />
-                ) : (
-                  <Mic className="w-4 h-4" />
-                )}
+                {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </Button>
-              <Button 
-                onClick={() => handleSend()}
-                size="sm" 
-                disabled={isLoading || !input.trim()}
-              >
+              <Button onClick={() => handleSend()} size="sm" disabled={isLoading || !input.trim()}>
                 <Send className="w-4 h-4" />
               </Button>
             </div>

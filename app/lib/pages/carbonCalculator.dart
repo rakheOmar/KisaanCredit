@@ -335,9 +335,7 @@ class _CarbonCalculatorPageState extends State<CarbonCalculatorPage>
                         flex: 2,
                         child: Container(
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [primaryGreen, darkGreen],
-                            ),
+                            color: darkGreen,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
@@ -888,16 +886,9 @@ class _CarbonCalculatorPageState extends State<CarbonCalculatorPage>
                             flex: 3,
                             child: Container(
                               decoration: BoxDecoration(
-                                gradient: isAnalyzing || analysisComplete
-                                    ? LinearGradient(
-                                        colors: [
-                                          Colors.grey[300]!,
-                                          Colors.grey[400]!,
-                                        ],
-                                      )
-                                    : LinearGradient(
-                                        colors: [primaryGreen, darkGreen],
-                                      ),
+                                color: (isAnalyzing || analysisComplete
+                                    ? Colors.grey
+                                    : darkGreen),
                                 borderRadius: BorderRadius.circular(20),
                                 boxShadow: [
                                   BoxShadow(
@@ -1035,7 +1026,7 @@ class _CarbonCalculatorPageState extends State<CarbonCalculatorPage>
       floatingActionButton: analysisComplete
           ? Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [primaryGreen, darkGreen]),
+                color: darkGreen,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(

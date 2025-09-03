@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Tributum',
+      title: 'KisaanCredit',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: primaryColor),
         fontFamily: 'Inter',
@@ -113,7 +113,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
           SizedBox(width: 10),
           Text(
-            'Tributum',
+            'KisaanCredit',
             style: TextStyle(
               fontWeight: FontWeight.w700,
               color: Color(0xFF1F2937),
@@ -740,7 +740,7 @@ class FooterSection extends StatelessWidget {
       padding: EdgeInsets.symmetric(vertical: 40, horizontal: 24),
       child: Center(
         child: Text(
-          "© 2025 Tributum. All rights reserved.",
+          "© 2025 KisaanCredit. All rights reserved.",
           style: Theme.of(context).textTheme.bodyMedium,
         ),
       ),

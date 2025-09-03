@@ -105,7 +105,7 @@ class _SignupPageState extends State<SignupPage> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  "Sign up to get started with Tributum",
+                  "Sign up to get started with KisaanCredit",
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16, color: Colors.grey),
                 ),
