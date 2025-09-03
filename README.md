@@ -137,7 +137,7 @@ flutter run
 
 5. **Setup Python AI/ML Server**
 ```
-cd ../server-fast_api
+cd ../server-flask
 uv venv
 .venv/Scripts/activate
 uv pip install -r requirements.txt
@@ -162,5 +162,6 @@ Fork the Project
 
 ## License
 Distributed under the MIT License. See LICENSE for more information.
+
 
 
