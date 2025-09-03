@@ -16,13 +16,16 @@ KisaanCredit is a full-stack 'Soil to Sale' ecosystem that digitizes and democra
 ## Video Demo
 <div align="left">
     <h3>KisaanCredit - Project Manager (Website)</h3>
-    <video src= "https://github.com/user-attachments/assets/ec7defa1-e6c5-40d2-84bd-c54e26a3fcec"/>
+    <video src= "https://github.com/user-attachments/assets/d6baff25-575c-4eb1-bfae-992587ac75b9"/>
 </div>
        
 <div align="left">
     <h3>KisaanCredit - Farmer (Flutter App)</h3>
-    <video src= "https://github.com/user-attachments/assets/ec7defa1-e6c5-40d2-84bd-c54e26a3fcec"/>
+    <video src= "https://github.com/user-attachments/assets/1f8e7075-e69f-4028-b06a-d5175dd4d6d3"/>
 </div>
+
+
+
 
 ## The Problem
 
@@ -162,6 +165,7 @@ Fork the Project
 
 ## License
 Distributed under the MIT License. See LICENSE for more information.
+
 
 
 
